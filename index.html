@@ -3975,14 +3975,20 @@
     }
 
     /* mobile cat tab */
+    .mobile-cat-tab {
+      background: #ffffff !important;
+      color: #444 !important;
+    }
+
     .mobile-cat-tab.active {
-      background: #f4f4f4 !important;
+      background: #e8e8e8 !important;
       color: #111 !important;
-      border-bottom: 1px solid #aacf38 !important;
+      border-bottom: 3px solid #888 !important;
+      font-weight: 700 !important;
     }
 
     .mobile-cat-tab:hover {
-      background: #f5f9e8 !important;
+      background: #f4f4f4 !important;
       color: #111 !important;
     }
 
@@ -4064,7 +4070,8 @@
         left: 0;
         right: 0;
         z-index: 301 !important;
-        background:#0
+        background: #ffffff !important;
+        border-bottom: 1px solid #e0e0e0;
       }
 
       /* sub-nav(desktop tabs): 모바일 완전 숨김 */
@@ -5678,8 +5685,15 @@
                 zip: meta.zip || '',
                 supabase_id: sbUser.id
               };
-              S.isAdmin = (sbUser.email === 'admin@tresupply.com');
-              saveUserProfile(); updateAccountButton(); updateAdminVisibility();
+              /* profiles 테이블에서 admin 권한 확인 */
+              supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).single()
+                .then(function(r) {
+                  S.isAdmin = (r.data && r.data.is_admin) ? true : (sbUser.email === 'admin@tresupply.com');
+                  saveUserProfile(); updateAccountButton(); updateAdminVisibility();
+                }).catch(function() {
+                  S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+                  saveUserProfile(); updateAccountButton(); updateAdminVisibility();
+                });
               closeModal('loginModal');
               toast('Signed in as ' + S.user.name, 'ok');
             } else if (event === 'SIGNED_OUT') {
@@ -5689,7 +5703,7 @@
           } catch(e2) { console.warn('Auth state error:', e2); }
         });
 
-        /* 기존 세션 복원 - 오류시 조용히 무시 */
+        /* 기존 세션 복원 */
         supabaseClient.auth.getSession().then(function(result) {
           if (!result || result.error) return;
           if (result.data && result.data.session) {
@@ -5702,13 +5716,23 @@
               city: meta.city || '', state: meta.state || '',
               zip: meta.zip || '', supabase_id: sbUser.id
             };
-            S.isAdmin = (sbUser.email === 'admin@tresupply.com');
-            updateAccountButton(); updateAdminVisibility();
+            /* profiles 테이블에서 is_admin 확인 */
+            supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).single()
+              .then(function(r) {
+                if (r.data) {
+                  S.isAdmin = !!r.data.is_admin;
+                } else {
+                  S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+                }
+                updateAccountButton(); updateAdminVisibility();
+              });
           }
+          /* DB에서 제품/재고 로드 */
+          loadProductsFromDB();
         }).catch(function(err) {
-          /* Failed to fetch 등 네트워크 오류 - 데모 모드 유지 */
-          console.warn('Supabase getSession error (demo mode active):', err.message);
+          console.warn('Supabase getSession error:', err.message);
           supabaseClient = null;
+          /* 로컬 데이터로 폴백 */
         });
 
       } catch(e) {
@@ -5720,6 +5744,133 @@
     function initStripe() {
       try { if (window.Stripe) stripeInstance = window.Stripe(STRIPE_PK); }
       catch(e) { console.warn('Stripe init failed:', e); }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       SUPABASE DB 연동 함수들
+    ══════════════════════════════════════════════════════ */
+
+    /* ── 제품 + 재고 DB에서 로드 ── */
+    function loadProductsFromDB() {
+      if (!supabaseClient) return;
+      supabaseClient.from('products').select('*, inventory(stock)').eq('is_active', true)
+        .then(function(result) {
+          if (result.error) { console.warn('Products load error:', result.error); return; }
+          if (!result.data || result.data.length === 0) return;
+          /* DB 데이터로 PRODUCTS 배열 업데이트 */
+          result.data.forEach(function(p) {
+            var stock = (p.inventory && p.inventory.length > 0) ? p.inventory[0].stock : 0;
+            var existing = PRODUCTS.find(function(x) { return x.id === p.id; });
+            if (existing) {
+              existing.name = p.name; existing.brand = p.brand || existing.brand;
+              existing.desc = p.description || existing.desc;
+              existing.price = parseFloat(p.price) || existing.price;
+              existing.size = p.size || existing.size;
+              existing.sku = p.sku || existing.sku;
+              existing.img = p.img_url || existing.img;
+              S.inv[p.id] = stock;
+            } else {
+              var newProd = {
+                id: p.id, sku: p.sku, name: p.name, brand: p.brand || '',
+                desc: p.description || p.name, size: p.size || '',
+                price: parseFloat(p.price) || 0,
+                mainCat: p.main_cat || 'Chemical', category: p.main_cat || 'Chemical',
+                subCat: p.sub_cat || '', subCats: p.sub_cats || [p.sub_cat].filter(Boolean),
+                badge: p.badge || '', img: p.img_url || '', stock: stock
+              };
+              PRODUCTS.push(newProd);
+              S.inv[p.id] = stock;
+            }
+          });
+          renderCatList();
+          if (S.view === 'catalog') renderProductArea();
+          console.info('DB에서 제품 ' + result.data.length + '개 로드됨');
+        }).catch(function(err) { console.warn('loadProductsFromDB error:', err); });
+    }
+
+    /* ── 제품 DB에 저장 (Admin) ── */
+    function saveProductToDB(product, stock) {
+      if (!supabaseClient || !S.isAdmin) return Promise.resolve();
+      var dbProduct = {
+        id: product.id, sku: product.sku, name: product.name,
+        brand: product.brand, description: product.desc,
+        size: product.size, price: product.price,
+        main_cat: product.mainCat, sub_cat: product.subCat,
+        sub_cats: product.subCats || [product.subCat],
+        badge: product.badge || '', img_url: product.img || '',
+        is_active: true
+      };
+      return supabaseClient.from('products').upsert(dbProduct)
+        .then(function(r) {
+          if (r.error) { console.warn('saveProductToDB error:', r.error); return; }
+          /* 재고도 저장 */
+          return supabaseClient.from('inventory').upsert({ product_id: product.id, stock: stock || 0 });
+        });
+    }
+
+    /* ── 제품 DB에서 삭제 (Admin) ── */
+    function deleteProductFromDB(productId) {
+      if (!supabaseClient || !S.isAdmin) return Promise.resolve();
+      return supabaseClient.from('products').update({ is_active: false }).eq('id', productId)
+        .then(function(r) { if (r.error) console.warn('deleteProductFromDB error:', r.error); });
+    }
+
+    /* ── 재고 DB 업데이트 (Admin) ── */
+    function updateStockInDB(productId, stock) {
+      if (!supabaseClient) return;
+      supabaseClient.from('inventory').upsert({ product_id: productId, stock: parseInt(stock) || 0 })
+        .then(function(r) { if (r.error) console.warn('updateStockInDB error:', r.error); });
+    }
+
+    /* ── 주문 DB에 저장 ── */
+    function saveOrderToDB(order) {
+      if (!supabaseClient || !S.user) return;
+      var dbOrder = {
+        id: order.id, inv_num: order.invNum,
+        user_id: S.user.supabase_id || null,
+        customer_name: order.customer.name,
+        customer_email: order.customer.email,
+        customer_company: order.customer.company || '',
+        shipping_address: order.customer.address,
+        subtotal: order.subtotal, tax: order.tax, total: order.total,
+        payment_method: order.paymentMethod || '', status: 'completed'
+      };
+      supabaseClient.from('orders').insert(dbOrder).then(function(r) {
+        if (r.error) { console.warn('saveOrderToDB error:', r.error); return; }
+        /* order_items 저장 */
+        var items = order.items.map(function(item) {
+          return {
+            order_id: order.id, product_id: item.product.id,
+            product_name: item.product.name, product_sku: item.product.sku,
+            product_size: item.product.size, unit_price: item.product.price,
+            quantity: item.qty, subtotal: item.product.price * item.qty
+          };
+        });
+        supabaseClient.from('order_items').insert(items)
+          .then(function(r2) { if (r2.error) console.warn('order_items error:', r2.error); });
+      });
+    }
+
+    /* ── 내 주문 DB에서 로드 ── */
+    function loadOrdersFromDB() {
+      if (!supabaseClient || !S.user || !S.user.supabase_id) return;
+      supabaseClient.from('orders').select('*, order_items(*)')
+        .eq('user_id', S.user.supabase_id).order('created_at', { ascending: false })
+        .then(function(result) {
+          if (result.error || !result.data) return;
+          S.orders = result.data.map(function(o) {
+            return {
+              id: o.id, invNum: o.inv_num,
+              date: new Date(o.created_at).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}),
+              subtotal: o.subtotal, tax: o.tax, total: o.total,
+              customer: { name: o.customer_name, email: o.customer_email, company: o.customer_company || '', address: o.shipping_address },
+              items: (o.order_items || []).map(function(i) {
+                return { product: { id: i.product_id, name: i.product_name, sku: i.product_sku, size: i.product_size, price: i.unit_price, brand:'' }, qty: i.quantity };
+              })
+            };
+          });
+          if (S.view === 'account') renderAccountPage('orders');
+        });
     }
 
     /* ── Supabase 로그인 (인증 필수) ── */
@@ -5941,9 +6092,8 @@
         date:new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
         customer:{name:S.user?S.user.name:'Guest',email:S.user?S.user.email:'',company:S.user?(S.user.company||''):'',address:[addr,city,sz].filter(Boolean).join(', ')}};
       S.cart.forEach(function(item){ S.inv[item.product.id]=Math.max(0,getStock(item.product.id)-item.qty); });
-      if(supabaseClient&&S.user&&S.user.supabase_id){
-        supabaseClient.from('orders').insert([{user_id:S.user.supabase_id,order_data:JSON.stringify(order),total:order.total,created_at:new Date().toISOString()}]).then(function(r){if(r.error)console.warn('Supabase order save failed:',r.error);});
-      }
+      /* DB에 구조화된 형태로 저장 */
+      saveOrderToDB(order);
       S.orders.push(order); saveOrders(); S.cart=[];
       updateCartBadge(); renderQuickCart();
       if(S.view==='catalog') renderProductArea();
@@ -6004,6 +6154,7 @@
       renderAccountPage('info');
       buildDesktopNavTabs();
       if (isMobile()) buildMobileCatTabs();
+      loadOrdersFromDB();
     }
 
     /* 호환성 래퍼 */
@@ -6335,12 +6486,21 @@
       var mc = selectEl.value;
       var subEl = document.getElementById(subId);
       if (!subEl) return;
-      var html = '<option value="">-- Sub Category --</option>';
-      if (mc && CATEGORY_CONFIG[mc]) {
-        CATEGORY_CONFIG[mc].subs.forEach(function (s) {
-          html += '<option value="' + s.name + '">' + s.name + '</option>';
-        });
+      if (!mc || !CATEGORY_CONFIG[mc]) {
+        subEl.innerHTML = '<p style="font-size:12px;color:#aaa;padding:6px 0">Main Category를 먼저 선택하세요</p>';
+        return;
       }
+      /* 체크박스 방식으로 렌더링 */
+      var prefix = subId.replace('_subcat', '');
+      var html = '<div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">';
+      CATEGORY_CONFIG[mc].subs.forEach(function(s) {
+        var chkId = prefix + '_chk_' + s.name.replace(/\s+/g, '_');
+        html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:4px 0;color:#333">'
+          + '<input type="checkbox" id="' + chkId + '" name="' + prefix + '_subcat_chk" value="' + escQ(s.name) + '"'
+          + ' style="width:16px;height:16px;accent-color:#aacf38;cursor:pointer;flex-shrink:0">'
+          + '<span>' + s.name + '</span></label>';
+      });
+      html += '</div><p style="font-size:11px;color:#888;margin-top:4px">여러 개 선택 가능</p>';
       subEl.innerHTML = html;
     }
 
@@ -6443,23 +6603,27 @@
       var v = function (field) { return isEdit ? escQ(p[field] || '') : ''; };
       var vn = function (field) { return isEdit ? (p[field] || 0) : ''; };
 
+      /* 기본 Main Category: edit이면 기존값, 신규면 첫번째 카테고리(Chemical) */
+      var defaultMainCat = isEdit ? (p.mainCat || '') : (Object.keys(CATEGORY_CONFIG)[0] || '');
       var mainOpts = '<option value="">-- Main Category --</option>';
-      Object.keys(CATEGORY_CONFIG).forEach(function (mc) {
-        mainOpts += '<option value="' + mc + '"' + (isEdit && p.mainCat === mc ? ' selected' : '') + '>' + mc + '</option>';
+      Object.keys(CATEGORY_CONFIG).forEach(function(mc) {
+        var sel = (mc === defaultMainCat) ? ' selected' : '';
+        mainOpts += '<option value="' + mc + '"' + sel + '>' + mc + '</option>';
       });
 
       /* Sub Category — 체크박스 다중선택 */
       var existingSubs = isEdit ? (Array.isArray(p.subCats) ? p.subCats : [p.subCat].filter(Boolean)) : [];
+      var activeCat = defaultMainCat;
       var subCheckboxHtml = '';
-      if (isEdit && p.mainCat && CATEGORY_CONFIG[p.mainCat]) {
+      if (activeCat && CATEGORY_CONFIG[activeCat]) {
         subCheckboxHtml = '<div style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;border:1px solid #ddd;border-radius:6px;padding:8px 10px;background:#fafafa">';
-        CATEGORY_CONFIG[p.mainCat].subs.forEach(function (s) {
+        CATEGORY_CONFIG[activeCat].subs.forEach(function(s) {
           var chkId = prefix + '_chk_' + s.name.replace(/\s+/g, '_');
           var checked = existingSubs.indexOf(s.name) >= 0;
-          subCheckboxHtml += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:3px 0;color:#333">'
+          subCheckboxHtml += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:4px 0;color:#333">'
             + '<input type="checkbox" id="' + chkId + '" name="' + prefix + '_subcat_chk" value="' + escQ(s.name) + '"'
             + (checked ? ' checked' : '')
-            + ' style="width:15px;height:15px;accent-color:#aacf38;cursor:pointer;flex-shrink:0">'
+            + ' style="width:16px;height:16px;accent-color:#aacf38;cursor:pointer;flex-shrink:0">'
             + '<span>' + s.name + '</span></label>';
         });
         subCheckboxHtml += '</div><p style="font-size:11px;color:#888;margin-top:4px">여러 개 선택 가능</p>';
@@ -6602,6 +6766,7 @@
       closeModal('editProductModal');
       toast(p.name + ' updated!', 'ok');
       saveCustomProducts();
+      saveProductToDB(p, S.inv[p.id]);
       if (S.view === 'catalog') renderProductArea();
       if (S.view === 'detail') openDetail(S.detailId);
       renderCatList();
@@ -6737,15 +6902,18 @@
         toast('Sub Category를 1개 이상 선택해주세요', 'err'); return;
       }
       var newId = 'custom_' + Date.now();
-      PRODUCTS.push({
+      var newProduct = {
         id: newId, sku: sku, name: name, brand: brand,
         desc: desc || name, size: size, price: price,
         category: subCat, mainCat: mainCat, subCat: subCat, subCats: subCats,
         badge: '', img: img, stock: stock
-      });
+      };
+      PRODUCTS.push(newProduct);
       if (img) PRODUCT_IMAGES[newId] = img;
       S.inv[newId] = stock;
       saveCustomProducts();
+      /* Supabase DB에도 저장 */
+      saveProductToDB(newProduct, stock);
       renderCatList();
       if (S.view === 'catalog') renderProductArea();
       toast(name + ' added to "' + mainCat + ' › ' + subCat + '"!', 'ok');
@@ -6768,6 +6936,7 @@
       renderCatList();
       if (S.view === 'catalog') renderProductArea();
       saveProductState();
+      deleteProductFromDB(id);
       toast(p.name + ' deleted.', 'ok');
       renderAdminPanel();
     }
