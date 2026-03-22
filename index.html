@@ -465,7 +465,7 @@
     .prod-area-wrap {
       border: 1px solid #ccc;
       border-radius: 3px;
-      background: #fff8f5;
+      background: #f0f2f5;
       margin-left: 10px;
       min-height: 500px
     }
@@ -4825,7 +4825,7 @@
       <div class="header-right">
         <button class="hdr-link desktop-only" id="accountBtn" onclick="openLoginModal()">Account</button>
         <button class="hdr-link desktop-only" onclick="openCart()">&#128722; Cart</button>
-        <button class="hdr-link mobile-only" onclick="openContactPage()"><span class="mob-icon">☎</span>Call</button>
+        <button class="hdr-link mobile-only" onclick="openContactPage()"><span class="mob-icon">☎</span>Contact</button>
         <button class="hdr-link mobile-only"
           onclick="S.user ? (openAccountDashboard(), setTimeout(function(){renderAccountPage('orders')},50)) : openLoginModal()"><span
             class="mob-icon">&#128666;</span>Order</button>
@@ -4923,9 +4923,7 @@
                 <div>
                   <div style="font-weight:700;font-size:13px;color:#111;margin-bottom:3px">Email</div>
                   <div style="font-size:12.5px;color:#555"><a
-                      href="/cdn-cgi/l/email-protection#b2d9d3cbf2c6c09fd7c3c7dbc2dfd7dcc69cd1dddf"
-                      style="color:#5a7a00;font-weight:700"><span class="__cf_email__"
-                        data-cfemail="4328223a0337316e2632362a332e262d376d202c2e"><span class="__cf_email__" data-cfemail="c3a8a2ba83b7b1eea6b2b6aab3aea6adb7eda0acae">[email&#160;protected]</span></span></a><br><span
+                      href="mailto:kay@tr-equipment.com" style="color:#5a7a00;font-weight:700">kay@tr-equipment.com</a><br><span
                       style="color:#888">We reply within 24 hours</span>
                   </div>
                 </div>
@@ -6046,7 +6044,7 @@
         +'<div class="co-sec">Shipping Address</div>'
         +'<div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" class="inp-full" placeholder="123 Main Street" value="'+escQ(u.street||'')+'"></div>'
         +'<div class="fi"><label>City *</label><input type="text" id="co_ci" class="inp-full" placeholder="Maryland" value="'+escQ(u.city||'')+'"></div>'
-        +'<div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" class="inp-full" placeholder="MD 20748" value="'+escQ((u.state||'')+(u.zip?' '+u.zip:''))+'"></div></div>'
+        +'<div class="fi"><label>State *</label><input type="text" id="co_st" class="inp-full" placeholder="MD" value="'+escQ(u.state||'')+'"></div>'+'<div class="fi"><label>ZIP Code *</label><input type="text" id="co_zp" class="inp-full" placeholder="20748" value="'+escQ(u.zip||'')+'"></div></div>'
         +'<div class="co-sec">&#128179; Card Payment</div>'
         +'<div id="stripe-card-element" style="border:1.5px solid #d1d5db;border-radius:6px;padding:12px 14px;background:#fff;margin-bottom:12px"></div>'
         +'<div id="stripe-card-errors" style="color:#c00;font-size:12px;margin-bottom:10px;min-height:18px"></div>'
@@ -6059,7 +6057,7 @@
             var elements = stripeInstance.elements();
             window._stripeCardEl = elements.create('card', {
               style: { base: { fontSize:'15px', color:'#111', fontFamily:'Arial, sans-serif', '::placeholder':{color:'#aab'} }, invalid:{color:'#c00'} },
-              hidePostalCode: false
+              hidePostalCode: true
             });
             window._stripeCardEl.mount('#stripe-card-element');
             window._stripeCardEl.addEventListener('change', function(ev) {
@@ -6107,7 +6105,9 @@
       var sub   = cartSub();
       var tax   = sub * 0.085;
       var total = sub + tax;
-      var sz    = ($e('co_sz')||{}).value||'';
+      var st    = ($e('co_st')||{}).value||'';
+      var zp    = ($e('co_zp')||{}).value||'';
+      var sz    = (st + ' ' + zp).trim();
 
       var lineItems = S.cart.map(function(item) {
         return {
@@ -6168,7 +6168,9 @@
     function processStripePayment() {
       var addr = ($e('co_ad')||{}).value||'';
       var city = ($e('co_ci')||{}).value||'';
-      var sz   = ($e('co_sz')||{}).value||'';
+      var st   = ($e('co_st')||{}).value||'';
+      var zp   = ($e('co_zp')||{}).value||'';
+      var sz   = (st + ' ' + zp).trim();
 
       if (!addr.trim()) { toast('배송 주소를 입력해주세요', 'err'); if($e('co_ad')) $e('co_ad').focus(); return; }
       if (!city.trim()) { toast('도시명을 입력해주세요', 'err'); if($e('co_ci')) $e('co_ci').focus(); return; }
