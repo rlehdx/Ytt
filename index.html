@@ -5755,7 +5755,15 @@
       if (!supabaseClient) return;
       supabaseClient.from('products').select('*, inventory(stock)').eq('is_active', true)
         .then(function(result) {
-          if (result.error) { console.warn('Products load error:', result.error); return; }
+          if (result.error) {
+            var errMsg = result.error.message || result.error.code || JSON.stringify(result.error);
+            console.warn('Products load error:', errMsg);
+            /* 테이블 없음(42P01) → SQL 실행 필요 안내 */
+            if (errMsg.indexOf('42P01') >= 0 || errMsg.indexOf('does not exist') >= 0) {
+              console.warn('products 테이블이 없습니다. Supabase SQL Editor에서 supabase_setup.sql을 실행하세요.');
+            }
+            return;
+          }
           if (!result.data || result.data.length === 0) return;
           /* DB 데이터로 PRODUCTS 배열 업데이트 */
           result.data.forEach(function(p) {
@@ -6645,10 +6653,14 @@
         '<div><label>Size *</label>' + buildSizeSelect(isEdit ? p.size : '', prefix + '_size') + '</div>' +
         '<div><label>' + (isEdit ? 'Current Stock' : 'Initial Stock') + '</label>' +
         '<input type="number" id="' + prefix + '_stock" value="' + (isEdit ? getStock(p.id) : 0) + '" min="0"></div>' +
-        '<div><label>Main Category *</label>' +
+        '<div class="span2"><label>Main Category *</label>' +
         '<select id="' + prefix + '_maincat" onchange="onMainCatChange(this,\'' + prefix + '_subcat\')">' + mainOpts + '</select></div>' +
-        '<div><label>Sub Category * <span style="font-size:10.5px;font-weight:400;color:#888">(복수 선택 가능)</span></label>' +
-        '<div id="' + prefix + '_subcat">' + subCheckboxHtml + '</div></div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px">' +
+        '<label style="font-size:11px;font-weight:700;color:#555;display:block;margin-bottom:6px">Sub Category * <span style="font-size:10.5px;font-weight:400;color:#888">(복수 선택 가능)</span></label>' +
+        '<div id="' + prefix + '_subcat" style="position:relative;z-index:1">' + subCheckboxHtml + '</div>' +
+        '</div>' +
+        '<div class="aaf-grid" style="margin-bottom:14px">' +
         '<div class="span3"><label>Description</label>' +
         '<input type="text" id="' + prefix + '_desc" value="' + v('desc') + '" placeholder="Short product description"></div>' +
         '<div class="span3"><label>Product Image <span style="color:#888;font-weight:400;font-size:11px">(선택사항 — JPG/PNG/WEBP)</span></label>' +
@@ -6879,9 +6891,20 @@
 
     /* ── 체크된 Sub Category 값 배열로 반환 ── */
     function getCheckedSubs(prefix) {
-      var boxes = document.querySelectorAll('input[name="' + prefix + '_subcat_chk"]:checked');
+      /* 체크박스를 name 속성과 checked 상태로 검색 */
       var vals = [];
-      boxes.forEach(function (b) { vals.push(b.value); });
+      /* 방법1: name 속성으로 찾기 */
+      var boxes = document.querySelectorAll('input[name="' + prefix + '_subcat_chk"]:checked');
+      if (boxes.length > 0) {
+        boxes.forEach(function(b) { vals.push(b.value); });
+        return vals;
+      }
+      /* 방법2: subcat div 안에서 직접 찾기 (fallback) */
+      var subcatDiv = document.getElementById(prefix + '_subcat');
+      if (subcatDiv) {
+        var allBoxes = subcatDiv.querySelectorAll('input[type="checkbox"]:checked');
+        allBoxes.forEach(function(b) { vals.push(b.value); });
+      }
       return vals;
     }
 
@@ -6898,9 +6921,12 @@
       var desc = ($e('np_desc') || {}).value || '';
       var img = ($e('np_imgdata') || {}).value || '';
 
-      if (!name || !brand || !sku || !price || !size || !mainCat || subCats.length === 0) {
-        toast('Sub Category를 1개 이상 선택해주세요', 'err'); return;
-      }
+      if (!name.trim())    { toast('Product Name을 입력하세요', 'err'); return; }
+      if (!brand.trim())   { toast('Brand를 입력하세요', 'err'); return; }
+      if (!sku.trim())     { toast('Part # (SKU)를 입력하세요', 'err'); return; }
+      if (!size)           { toast('Size를 선택하세요', 'err'); return; }
+      if (!mainCat)        { toast('Main Category를 선택하세요', 'err'); return; }
+      if (subCats.length === 0) { toast('Sub Category를 1개 이상 선택하세요', 'err'); return; }
       var newId = 'custom_' + Date.now();
       var newProduct = {
         id: newId, sku: sku, name: name, brand: brand,
