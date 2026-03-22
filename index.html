@@ -5727,13 +5727,16 @@
                 updateAccountButton(); updateAdminVisibility();
               });
           }
-          /* DB에서 제품/재고 로드 */
+          /* DB에서 제품/재고 로드 (로그인 여부 무관) */
           loadProductsFromDB();
         }).catch(function(err) {
           console.warn('Supabase getSession error:', err.message);
           supabaseClient = null;
-          /* 로컬 데이터로 폴백 */
         });
+        /* 세션 없어도 제품 로드 (비로그인 방문자도 제품 볼 수 있어야 함) */
+        setTimeout(function() {
+          if (supabaseClient) loadProductsFromDB();
+        }, 1000);
 
       } catch(e) {
         console.warn('Supabase init failed:', e.message);
@@ -5753,66 +5756,110 @@
     /* ── 제품 + 재고 DB에서 로드 ── */
     function loadProductsFromDB() {
       if (!supabaseClient) return;
-      supabaseClient.from('products').select('*, inventory(stock)').eq('is_active', true)
+      /* Step 1: products 테이블 로드 */
+      supabaseClient.from('products').select('*').eq('is_active', true)
         .then(function(result) {
           if (result.error) {
             var errMsg = result.error.message || result.error.code || JSON.stringify(result.error);
             console.warn('Products load error:', errMsg);
-            /* 테이블 없음(42P01) → SQL 실행 필요 안내 */
             if (errMsg.indexOf('42P01') >= 0 || errMsg.indexOf('does not exist') >= 0) {
-              console.warn('products 테이블이 없습니다. Supabase SQL Editor에서 supabase_setup.sql을 실행하세요.');
+              console.warn('products 테이블 없음 - supabase_setup.sql 실행 필요');
             }
             return;
           }
-          if (!result.data || result.data.length === 0) return;
-          /* DB 데이터로 PRODUCTS 배열 업데이트 */
-          result.data.forEach(function(p) {
-            var stock = (p.inventory && p.inventory.length > 0) ? p.inventory[0].stock : 0;
-            var existing = PRODUCTS.find(function(x) { return x.id === p.id; });
-            if (existing) {
-              existing.name = p.name; existing.brand = p.brand || existing.brand;
-              existing.desc = p.description || existing.desc;
-              existing.price = parseFloat(p.price) || existing.price;
-              existing.size = p.size || existing.size;
-              existing.sku = p.sku || existing.sku;
-              existing.img = p.img_url || existing.img;
-              S.inv[p.id] = stock;
-            } else {
-              var newProd = {
-                id: p.id, sku: p.sku, name: p.name, brand: p.brand || '',
-                desc: p.description || p.name, size: p.size || '',
-                price: parseFloat(p.price) || 0,
-                mainCat: p.main_cat || 'Chemical', category: p.main_cat || 'Chemical',
-                subCat: p.sub_cat || '', subCats: p.sub_cats || [p.sub_cat].filter(Boolean),
-                badge: p.badge || '', img: p.img_url || '', stock: stock
-              };
-              PRODUCTS.push(newProd);
-              S.inv[p.id] = stock;
-            }
-          });
-          renderCatList();
-          if (S.view === 'catalog') renderProductArea();
-          console.info('DB에서 제품 ' + result.data.length + '개 로드됨');
-        }).catch(function(err) { console.warn('loadProductsFromDB error:', err); });
+          if (!result.data || result.data.length === 0) {
+            console.info('DB에 제품 없음 - 로컬 데이터 사용');
+            return;
+          }
+          var products = result.data;
+
+          /* Step 2: inventory 테이블 별도 로드 */
+          supabaseClient.from('inventory').select('product_id, stock')
+            .then(function(invResult) {
+              var invMap = {};
+              if (!invResult.error && invResult.data) {
+                invResult.data.forEach(function(i) { invMap[i.product_id] = i.stock; });
+              }
+
+              /* Step 3: 로컬 PRODUCTS 배열에 DB 데이터 반영 */
+              products.forEach(function(p) {
+                var stock = (invMap[p.id] !== undefined) ? invMap[p.id] : 0;
+                var existing = PRODUCTS.find(function(x) { return x.id === p.id; });
+                if (existing) {
+                  /* 기존 제품 업데이트 */
+                  existing.name  = p.name         || existing.name;
+                  existing.brand = p.brand         || existing.brand;
+                  existing.desc  = p.description   || existing.desc;
+                  existing.price = parseFloat(p.price) || existing.price;
+                  existing.size  = p.size          || existing.size;
+                  existing.sku   = p.sku           || existing.sku;
+                  existing.img   = p.img_url       || existing.img;
+                  existing.mainCat = p.main_cat    || existing.mainCat;
+                  existing.subCat  = p.sub_cat     || existing.subCat;
+                  existing.subCats = p.sub_cats    || existing.subCats;
+                  S.inv[p.id] = stock;
+                } else {
+                  /* 신규 제품 추가 */
+                  var subCats = p.sub_cats || (p.sub_cat ? [p.sub_cat] : []);
+                  PRODUCTS.push({
+                    id: p.id, sku: p.sku || '', name: p.name, brand: p.brand || '',
+                    desc: p.description || p.name, size: p.size || '',
+                    price: parseFloat(p.price) || 0,
+                    mainCat: p.main_cat || 'Chemical',
+                    category: p.main_cat || 'Chemical',
+                    subCat: p.sub_cat || (subCats[0] || ''),
+                    subCats: subCats,
+                    badge: p.badge || '', img: p.img_url || '', stock: stock
+                  });
+                  S.inv[p.id] = stock;
+                }
+              });
+
+              /* localStorage 커스텀 제품은 DB에 없는 것만 유지 */
+              renderCatList();
+              if (S.view === 'catalog') renderProductArea();
+              console.info('✅ DB에서 제품 ' + products.length + '개 로드 완료');
+            }).catch(function(err) {
+              console.warn('Inventory load error:', err);
+              /* inventory 실패해도 제품은 표시 */
+              renderCatList();
+              if (S.view === 'catalog') renderProductArea();
+            });
+        }).catch(function(err) { console.warn('loadProductsFromDB catch:', err); });
     }
 
     /* ── 제품 DB에 저장 (Admin) ── */
     function saveProductToDB(product, stock) {
-      if (!supabaseClient || !S.isAdmin) return Promise.resolve();
+      if (!supabaseClient) { console.warn('Supabase 미연결 - DB 저장 건너뜀'); return Promise.resolve(); }
+      if (!S.isAdmin) { console.warn('Admin 권한 없음 - DB 저장 건너뜀'); return Promise.resolve(); }
       var dbProduct = {
         id: product.id, sku: product.sku, name: product.name,
         brand: product.brand, description: product.desc,
-        size: product.size, price: product.price,
+        size: product.size, price: parseFloat(product.price) || 0,
         main_cat: product.mainCat, sub_cat: product.subCat,
-        sub_cats: product.subCats || [product.subCat],
+        sub_cats: product.subCats || [product.subCat].filter(Boolean),
         badge: product.badge || '', img_url: product.img || '',
         is_active: true
       };
-      return supabaseClient.from('products').upsert(dbProduct)
+      console.info('DB 저장 시도:', dbProduct.id, dbProduct.name);
+      return supabaseClient.from('products').upsert(dbProduct, { onConflict: 'id' })
         .then(function(r) {
-          if (r.error) { console.warn('saveProductToDB error:', r.error); return; }
-          /* 재고도 저장 */
-          return supabaseClient.from('inventory').upsert({ product_id: product.id, stock: stock || 0 });
+          if (r.error) {
+            console.warn('saveProductToDB error:', r.error.message || r.error);
+            toast('DB 저장 실패: ' + (r.error.message || 'Unknown'), 'err');
+            return;
+          }
+          console.info('✅ products DB 저장 완료:', dbProduct.id);
+          /* 재고 저장 */
+          return supabaseClient.from('inventory')
+            .upsert({ product_id: product.id, stock: parseInt(stock) || 0 }, { onConflict: 'product_id' })
+            .then(function(r2) {
+              if (r2.error) { console.warn('inventory upsert error:', r2.error.message); return; }
+              console.info('✅ inventory DB 저장 완료:', product.id, 'stock:', stock);
+            });
+        }).catch(function(err) {
+          console.warn('saveProductToDB catch:', err);
+          toast('DB 연결 오류: ' + err.message, 'err');
         });
     }
 
@@ -6073,6 +6120,9 @@
             if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub()*1.085); }
             toast('카드 오류: ' + result.error.message, 'err');
           } else {
+            /* paymentMethod.id = pm_xxx (카드 토큰화 성공) */
+            /* 실제 청구는 서버의 PaymentIntent confirm 필요 */
+            console.info('Stripe PM created:', result.paymentMethod.id);
             finalizeOrder(addr, city, sz, result.paymentMethod.id);
           }
         }).catch(function(err) {
@@ -6114,10 +6164,19 @@
     /* ── init 후 SDK 초기화 ── */
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function(){ initSupabase(); initStripe(); }, 500);
+        setTimeout(function(){
+          initSupabase();
+          initStripe();
+          /* Supabase 연결 완료 후 제품 로드 */
+          setTimeout(function() { if (supabaseClient) loadProductsFromDB(); }, 1500);
+        }, 300);
       });
     } else {
-      setTimeout(function(){ initSupabase(); initStripe(); }, 500);
+      setTimeout(function(){
+        initSupabase();
+        initStripe();
+        setTimeout(function() { if (supabaseClient) loadProductsFromDB(); }, 1500);
+      }, 300);
     }
     function renderCheckoutForm() { var sub = cartSub(); var tax = sub * 0.085; var total = sub + tax; var u = S.user; var authSection; if (u) { authSection = '<div class="auth-bar"><div class="auth-av">' + u.name.charAt(0).toUpperCase() + '</div><div><div class="auth-name">' + u.name + '</div><div class="auth-email">' + u.email + '</div></div><span class="auth-verified">&#10003; Verified</span></div>' } else { authSection = '<button class="google-btn" onclick="mockGoogleLogin(); setTimeout(renderCheckoutForm, 400)"><span class="gicon"></span> Sign in with Google for faster checkout</button><div class="or-line">or continue as guest</div>' } var orderRows = ''; S.cart.forEach(function (i) { orderRows += '<div class="co-row"><span>' + i.product.name + ' &times;' + i.qty + ' (' + i.product.size + ')</span><span>' + fmt(i.product.price * i.qty) + '</span></div>' }); var firstName = u ? (u.name.split(' ')[0] || '') : ''; var lastName = u ? (u.name.split(' ')[1] || '') : ''; var emailVal = u ? (u.email || '') : ''; var phoneVal = u ? (u.phone || '') : ''; var companyVal = u ? (u.company || '') : ''; var streetVal = u ? (u.street || '') : ''; var cityVal = u ? (u.city || '') : ''; var stateZip = u ? ((u.state || '') + (u.zip ? ' ' + u.zip : '')) : ''; var cardName = u ? u.name : ''; $e('checkoutBody').innerHTML = authSection + '<div class="co-summary">' + orderRows + '<div class="co-row"><span>Tax (8.5%)</span><span>' + fmt(tax) + '</span></div><div class="co-row co-total"><span>Total</span><span>' + fmt(total) + '</span></div></div><div class="co-sec">Contact Information</div><div class="co-grid"><div class="fi"><label>First Name *</label><input type="text" id="co_fn" placeholder="Alex" value="' + firstName + '"></div><div class="fi"><label>Last Name *</label><input type="text" id="co_ln" placeholder="Johnson" value="' + lastName + '"></div><div class="fi fi-full"><label>Email Address *</label><input type="email" id="co_em" placeholder="you@company.com" value="' + emailVal + '"></div><div class="fi"><label>Phone</label><input type="tel" id="co_ph" placeholder="(555) 000-0000" value="' + phoneVal + '"></div><div class="fi"><label>Company Name</label><input type="text" id="co_co" placeholder="Restaurant Inc." value="' + companyVal + '"></div></div><div class="co-sec">Shipping Address</div><div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" placeholder="123 Main Street" value="' + streetVal + '"></div><div class="fi"><label>City *</label><input type="text" id="co_ci" placeholder="Maryland" value="' + cityVal + '"></div><div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" placeholder="IL 60601" value="' + stateZip + '"></div></div><div class="co-sec">Payment Information</div><div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap"><span class="cc-tag">Visa</span><span class="cc-tag">Mastercard</span><span class="cc-tag">Amex</span><span class="cc-tag">Discover</span></div><div class="co-grid"><div class="fi fi-full"><label>Card Number *</label><input type="text" id="co_cn" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCardNumber(this)"></div><div class="fi"><label>Expiry (MM/YY) *</label><input type="text" id="co_ex" placeholder="12/27" maxlength="5" oninput="formatExpiry(this)"></div><div class="fi"><label>CVV *</label><input type="text" id="co_cv" placeholder="123" maxlength="4"></div><div class="fi fi-full"><label>Name on Card *</label><input type="text" id="co_nm" placeholder="Alex Johnson" value="' + cardName + '"></div></div><button class="co-pay-btn" id="payBtn" onclick="processPayment()">&#128274; PAY ' + fmt(total) + '</button><div class="co-secure"><span>&#128274; SSL Secured</span><span>&#128737; PCI DSS</span><span>&#10003; Powered by Stripe</span></div>' }
     function formatCardNumber(el) { var v = el.value.replace(/\D/g, '').substring(0, 16); el.value = (v.match(/.{1,4}/g) || []).join(' ') }
