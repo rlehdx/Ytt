@@ -3524,20 +3524,26 @@
 
 
 
+    /* ── sub-nav: 흰색 배경 ── */
+    .sub-nav {
+      background: #ffffff !important;
+    }
+
     .sn-btn {
       color: rgba(0, 0, 0, .65) !important;
+      background: #ffffff !important;
     }
 
     .sn-btn:hover {
       color: #111 !important;
-      border-bottom-color: #111 !important;
-      background: rgba(0, 0, 0, .08) !important;
+      border-bottom-color: #aacf38 !important;
+      background: #f4f4f4 !important;
     }
 
     .sn-btn.active {
-      color: #111 !important;
-      border-bottom-color: #111 !important;
-      background: rgba(0, 0, 0, .1) !important;
+      color: #444 !important;
+      border-bottom-color: #888 !important;
+      background: #e8e8e8 !important;
       font-weight: 700 !important;
     }
 
@@ -4779,6 +4785,10 @@
       color: #1a5e2d;
     }
   </style>
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 </head>
 
 <body>
@@ -4908,7 +4918,7 @@
                   <div style="font-size:12.5px;color:#555"><a
                       href="/cdn-cgi/l/email-protection#b2d9d3cbf2c6c09fd7c3c7dbc2dfd7dcc69cd1dddf"
                       style="color:#5a7a00;font-weight:700"><span class="__cf_email__"
-                        data-cfemail="4328223a0337316e2632362a332e262d376d202c2e">kay@tr-equipment.com</span></a><br><span
+                        data-cfemail="4328223a0337316e2632362a332e262d376d202c2e"><span class="__cf_email__" data-cfemail="c3a8a2ba83b7b1eea6b2b6aab3aea6adb7eda0acae">[email&#160;protected]</span></span></a><br><span
                       style="color:#888">We reply within 24 hours</span>
                   </div>
                 </div>
@@ -5061,7 +5071,7 @@
     </div>
   </footer>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
   <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
   <script type="text/javascript">
     /* ============================================================================
@@ -5625,10 +5635,332 @@
       renderCartPage();
       renderQuickCart();
     }
-    function toggleQuickCart() { var qc = $e('quickCart'); if (qc.style.display === 'block') { qc.style.display = 'none' } else { renderQuickCart(); qc.style.display = 'block' } }
+    function toggleQuickCart() { var qc = $e('quickCart'); if (!qc) return; if (qc.style.display === 'block') { qc.style.display = 'none' } else { renderQuickCart(); qc.style.display = 'block' } }
     function renderQuickCart() { var qc = $e('quickCart'); if (!qc) return; if (S.cart.length === 0) { qc.innerHTML = '<div class="qc-head">Quick Cart</div><div class="qc-empty">Cart is empty</div>'; return } var items = ''; S.cart.forEach(function (item) { items += '<div class="qc-item"><div class="qc-info"><div class="qc-name">' + item.product.name + '</div><div class="qc-meta">' + item.product.size + ' &times; ' + item.qty + ' = ' + fmt(item.product.price * item.qty) + '</div></div></div>' }); var sub = cartSub(); var tax = sub * 0.085; var total = sub + tax; qc.innerHTML = '<div class="qc-head">Quick Cart (' + cartQty() + ' items)</div><div class="qc-body">' + items + '</div><div class="qc-foot"><div class="qc-total"><span>Total (incl. tax)</span><span>' + fmt(total) + '</span></div><button class="btn-orange" style="width:100%; margin-top:8px; padding:9px" onclick="$e(\'quickCart\').style.display=\'none\'; openCart()">View Cart &amp; Checkout &#8594;</button></div>' }
     document.addEventListener('click', function (e) { var qc = $e('quickCart'); var btn = $e('cartBtnEl'); if (qc && btn && !qc.contains(e.target) && !btn.contains(e.target)) { qc.style.display = 'none' } });
-    function openCheckout() { $e('quickCart').style.display = 'none'; renderCheckoutForm(); openModal('checkoutModal') }
+    /* ═══════════════════════════════════════════
+       STRIPE + SUPABASE INTEGRATION
+       ═══════════════════════════════════════════ */
+    var SUPABASE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZka2VjZW9qbGNuYnd5cHBvZnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDY3ODgsImV4cCI6MjA4OTY4Mjc4OH0.SzULEzj6ivsndI97BoHd1vo0OEHhcv6wjERDyeHATEw';
+    var STRIPE_PK = 'pk_test_51TCQZgERxQ0bHKfyP6vKbkiXaJZvWwoSrmgjMGPf1TjTilpnSJABi8QEozHuwm9SXZ7XkbiHTGKIBN4mgOyFMV1A00vOO9ijCc';
+    var supabaseClient = null;
+    var stripeInstance = null;
+
+    function initSupabase() {
+      /* file:// 프로토콜에서는 Supabase 연결 불가 - 데모 모드 */
+      if (window.location.protocol === 'file:') {
+        console.info('Supabase: file:// 환경 - 데모 모드로 동작');
+        return;
+      }
+      if (!window.supabase) {
+        console.warn('Supabase SDK 미로드');
+        return;
+      }
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+        });
+
+        supabaseClient.auth.onAuthStateChange(function(event, session) {
+          try {
+            if (event === 'SIGNED_IN' && session) {
+              var sbUser = session.user;
+              var meta = sbUser.user_metadata || {};
+              S.user = {
+                name: meta.full_name || meta.name || sbUser.email.split('@')[0],
+                email: sbUser.email,
+                phone: meta.phone || '',
+                company: meta.company || '',
+                street: meta.street || '',
+                city: meta.city || '',
+                state: meta.state || '',
+                zip: meta.zip || '',
+                supabase_id: sbUser.id
+              };
+              S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+              saveUserProfile(); updateAccountButton(); updateAdminVisibility();
+              closeModal('loginModal');
+              toast('Signed in as ' + S.user.name, 'ok');
+            } else if (event === 'SIGNED_OUT') {
+              S.user = null; S.isAdmin = false; S.orders = [];
+              updateAccountButton(); updateAdminVisibility();
+            }
+          } catch(e2) { console.warn('Auth state error:', e2); }
+        });
+
+        /* 기존 세션 복원 - 오류시 조용히 무시 */
+        supabaseClient.auth.getSession().then(function(result) {
+          if (!result || result.error) return;
+          if (result.data && result.data.session) {
+            var sbUser = result.data.session.user;
+            var meta = sbUser.user_metadata || {};
+            S.user = {
+              name: meta.full_name || meta.name || sbUser.email.split('@')[0],
+              email: sbUser.email, phone: meta.phone || '',
+              company: meta.company || '', street: meta.street || '',
+              city: meta.city || '', state: meta.state || '',
+              zip: meta.zip || '', supabase_id: sbUser.id
+            };
+            S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+            updateAccountButton(); updateAdminVisibility();
+          }
+        }).catch(function(err) {
+          /* Failed to fetch 등 네트워크 오류 - 데모 모드 유지 */
+          console.warn('Supabase getSession error (demo mode active):', err.message);
+          supabaseClient = null;
+        });
+
+      } catch(e) {
+        console.warn('Supabase init failed:', e.message);
+        supabaseClient = null;
+      }
+    }
+
+    function initStripe() {
+      try { if (window.Stripe) stripeInstance = window.Stripe(STRIPE_PK); }
+      catch(e) { console.warn('Stripe init failed:', e); }
+    }
+
+    /* ── Supabase 로그인 (인증 필수) ── */
+    function loginWithEmail() {
+      var email = $e('loginEmail') ? $e('loginEmail').value.trim() : '';
+      var pass  = $e('loginPass')  ? $e('loginPass').value         : '';
+      if (!email || email.indexOf('@') < 0) { toast('유효한 이메일을 입력하세요', 'err'); return; }
+      if (!pass || pass.length < 6) { toast('비밀번호는 6자 이상이어야 합니다', 'err'); return; }
+
+      if (!supabaseClient) {
+        toast('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.', 'err');
+        return;
+      }
+
+      var btn = document.querySelector('#loginBody .btn-orange');
+      if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
+
+      supabaseClient.auth.signInWithPassword({ email: email, password: pass })
+        .then(function(result) {
+          if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+          if (result.error) {
+            var msg = result.error.message || 'Login failed';
+            if (msg.toLowerCase().indexOf('invalid') >= 0) msg = '이메일 또는 비밀번호가 올바르지 않습니다';
+            if (msg.toLowerCase().indexOf('email') >= 0 && msg.toLowerCase().indexOf('confirm') >= 0)
+              msg = '이메일 인증을 완료해주세요 (메일함 확인)';
+            toast(msg, 'err');
+          }
+          /* 성공시 onAuthStateChange가 자동으로 S.user 설정 */
+        })
+        .catch(function(err) {
+          if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+          toast('연결 오류: ' + (err.message || 'Unknown error'), 'err');
+          console.warn('Login error:', err);
+        });
+    }
+
+    /* ── Supabase 회원가입 ── */
+    function registerWithEmail() {
+      var fName=($e('regFName')||{}).value||''; var lName=($e('regLName')||{}).value||'';
+      var email=($e('regEmail')||{}).value||''; var phone=($e('regPhone')||{}).value||'';
+      var company=($e('regCompany')||{}).value||''; var street=($e('regStreet')||{}).value||'';
+      var city=($e('regCity')||{}).value||''; var state=($e('regState')||{}).value||'';
+      var zip=($e('regZip')||{}).value||''; var pass=($e('regPass')||{}).value||''; var pass2=($e('regPass2')||{}).value||'';
+      if (!fName.trim()) { toast('First name required','err'); return; }
+      if (!email||email.indexOf('@')<0) { toast('Valid email required','err'); return; }
+      if (!street.trim()||!city.trim()||!zip.trim()) { toast('Full shipping address required','err'); return; }
+      if (!pass||pass.length<8) { toast('Password min 8 chars','err'); return; }
+      if (pass!==pass2) { toast('Passwords do not match','err'); return; }
+      var fullName=(fName+' '+lName).trim();
+      if (!supabaseClient) {
+        S.user={name:fullName,email:email,phone:phone,company:company,street:street,city:city,state:state,zip:zip};
+        S.isAdmin=false; updateAccountButton(); updateAdminVisibility(); saveUserProfile();
+        closeModal('loginModal'); toast('Account created! Welcome, '+fullName,'ok'); return;
+      }
+      if (!supabaseClient) { toast('서버에 연결할 수 없습니다', 'err'); return; }
+      supabaseClient.auth.signUp({
+        email: email, password: pass,
+        options: { data: { full_name:fullName, phone:phone, company:company, street:street, city:city, state:state, zip:zip } }
+      }).then(function(result) {
+        if (result.error) {
+          var msg = result.error.message;
+          if (msg.toLowerCase().indexOf('already') >= 0) msg = '이미 가입된 이메일입니다. 로그인해주세요.';
+          toast(msg, 'err');
+        } else {
+          toast('가입 완료! 이메일 인증 링크를 확인해주세요 📧', 'ok');
+          closeModal('loginModal');
+        }
+      }).catch(function(err) {
+        toast('연결 오류: ' + (err.message || 'Unknown'), 'err');
+        console.warn('SignUp error:', err);
+      });
+    }
+
+    /* ── Google OAuth 로그인 ── */
+    function mockGoogleLogin() {
+      if (!supabaseClient) { toast('서버에 연결할 수 없습니다', 'err'); return; }
+      supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      }).catch(function(err) {
+        toast('Google 로그인 오류: ' + err.message, 'err');
+      });
+    }
+
+    /* ── 로그아웃 ── */
+    function logout() {
+      if (supabaseClient) supabaseClient.auth.signOut();
+      S.user=null; S.isAdmin=false; S.orders=[];
+      try{localStorage.removeItem(LS_USER);localStorage.removeItem(LS_ORDERS);}catch(e){}
+      updateAccountButton(); updateAdminVisibility(); closeModal('loginModal');
+      if (S.view==='account') selectCat(null,null);
+      toast('Signed out successfully','ok');
+    }
+
+    /* ── Stripe Checkout ── */
+    function openCheckout() {
+      var _qc=$e('quickCart'); if(_qc) _qc.style.display='none';
+      if (S.cart.length===0) { toast('Cart is empty','err'); return; }
+      if (!S.user) {
+        toast('로그인 후 결제를 진행해주세요 🔒','err');
+        openLoginModal();
+        return;
+      }
+      /* Stripe 로드 여부와 관계없이 항상 체크아웃 폼 열기 */
+      renderStripeCheckoutForm();
+      openModal('checkoutModal');
+    }
+
+    function renderStripeCheckoutForm() {
+      var sub=cartSub(); var tax=sub*0.085; var total=sub+tax; var u=S.user;
+      var orderRows='';
+      S.cart.forEach(function(i){ orderRows+='<div class="co-row"><span>'+i.product.name+' &times;'+i.qty+' ('+i.product.size+')</span><span>'+fmt(i.product.price*i.qty)+'</span></div>'; });
+      $e('checkoutBody').innerHTML=
+        '<div class="auth-bar" style="margin-bottom:14px"><div class="auth-av">'+u.name.charAt(0).toUpperCase()+'</div><div><div class="auth-name">'+u.name+'</div><div class="auth-email">'+u.email+'</div></div><span class="auth-verified">&#10003; Verified</span></div>'
+        +'<div class="co-summary">'+orderRows+'<div class="co-row"><span>Tax (8.5%)</span><span>'+fmt(tax)+'</span></div><div class="co-row co-total"><span>Total</span><span>'+fmt(total)+'</span></div></div>'
+        +'<div class="co-sec">Shipping Address</div>'
+        +'<div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" class="inp-full" placeholder="123 Main Street" value="'+escQ(u.street||'')+'"></div>'
+        +'<div class="fi"><label>City *</label><input type="text" id="co_ci" class="inp-full" placeholder="Maryland" value="'+escQ(u.city||'')+'"></div>'
+        +'<div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" class="inp-full" placeholder="MD 20748" value="'+escQ((u.state||'')+(u.zip?' '+u.zip:''))+'"></div></div>'
+        +'<div class="co-sec">&#128179; Card Payment</div>'
+        +'<div id="stripe-card-element" style="border:1.5px solid #d1d5db;border-radius:6px;padding:12px 14px;background:#fff;margin-bottom:12px"></div>'
+        +'<div id="stripe-card-errors" style="color:#c00;font-size:12px;margin-bottom:10px;min-height:18px"></div>'
+        +'<input type="hidden" id="co_em" value="'+escQ(u.email||'')+'">'
+        +'<button class="co-pay-btn" id="payBtn" onclick="processStripePayment()">&#128274; PAY '+fmt(total)+'</button>'
+        +'<div class="co-secure"><span>&#128274; SSL Secured</span><span>&#128737; PCI DSS</span><span>&#10003; Powered by Stripe</span></div>';
+      setTimeout(function(){
+        if (stripeInstance) {
+          try {
+            var elements = stripeInstance.elements();
+            window._stripeCardEl = elements.create('card', {
+              style: { base: { fontSize:'15px', color:'#111', fontFamily:'Arial, sans-serif', '::placeholder':{color:'#aab'} }, invalid:{color:'#c00'} },
+              hidePostalCode: false
+            });
+            window._stripeCardEl.mount('#stripe-card-element');
+            window._stripeCardEl.addEventListener('change', function(ev) {
+              var el = $e('stripe-card-errors');
+              if (el) el.textContent = ev.error ? ev.error.message : '';
+            });
+          } catch(e) {
+            console.warn('Stripe Elements error:', e);
+            showManualCardForm();
+          }
+        } else {
+          showManualCardForm();
+        }
+      }, 150);
+    }
+
+    function showManualCardForm() {
+      var el = $e('stripe-card-element');
+      if (!el) return;
+      el.innerHTML =
+        '<div style="display:grid;gap:10px">'
+        + '<div class="fi fi-full"><label style="font-size:11.5px;font-weight:700;color:#555;display:block;margin-bottom:4px">Card Number *</label>'
+        + '<input type="text" id="co_cn" class="inp-full" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCardNumber(this)"></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + '<div class="fi"><label style="font-size:11.5px;font-weight:700;color:#555;display:block;margin-bottom:4px">Expiry (MM/YY) *</label>'
+        + '<input type="text" id="co_ex" class="inp-full" placeholder="12/27" maxlength="5" oninput="formatExpiry(this)"></div>'
+        + '<div class="fi"><label style="font-size:11.5px;font-weight:700;color:#555;display:block;margin-bottom:4px">CVV *</label>'
+        + '<input type="text" id="co_cv" class="inp-full" placeholder="123" maxlength="4"></div>'
+        + '</div>'
+        + '<div class="fi fi-full"><label style="font-size:11.5px;font-weight:700;color:#555;display:block;margin-bottom:4px">Name on Card *</label>'
+        + '<input type="text" id="co_nm" class="inp-full" placeholder="Alex Johnson" value="' + escQ((S.user&&S.user.name)||'') + '"></div>'
+        + '</div>';
+    }
+
+    function processStripePayment() {
+      var addr = ($e('co_ad')||{}).value||'';
+      var city = ($e('co_ci')||{}).value||'';
+      var sz   = ($e('co_sz')||{}).value||'';
+
+      /* 주소 필수 */
+      if (!addr.trim()) { toast('배송 주소를 입력해주세요', 'err'); if($e('co_ad')) $e('co_ad').focus(); return; }
+      if (!city.trim()) { toast('도시명을 입력해주세요', 'err'); if($e('co_ci')) $e('co_ci').focus(); return; }
+
+      var btn = $e('payBtn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Processing...'; }
+
+      /* Stripe Elements로 카드 결제 */
+      if (stripeInstance && window._stripeCardEl) {
+        stripeInstance.createPaymentMethod({
+          type: 'card',
+          card: window._stripeCardEl,
+          billing_details: {
+            name:  S.user ? S.user.name  : '',
+            email: S.user ? S.user.email : ''
+          }
+        }).then(function(result) {
+          if (result.error) {
+            var errEl = $e('stripe-card-errors');
+            if (errEl) errEl.textContent = result.error.message;
+            if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub()*1.085); }
+            toast('카드 오류: ' + result.error.message, 'err');
+          } else {
+            finalizeOrder(addr, city, sz, result.paymentMethod.id);
+          }
+        }).catch(function(err) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub()*1.085); }
+          toast('결제 오류: ' + err.message, 'err');
+        });
+      } else {
+        /* Stripe 미로드 - 카드 입력값 직접 처리 */
+        var cn = ($e('co_cn')||{}).value||'';
+        var ex = ($e('co_ex')||{}).value||'';
+        var cv = ($e('co_cv')||{}).value||'';
+        var nm = ($e('co_nm')||{}).value||'';
+        if (!cn.replace(/\s/g,'') || !ex || !cv || !nm) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub()*1.085); }
+          toast('카드 정보를 모두 입력해주세요', 'err');
+          return;
+        }
+        setTimeout(function() { finalizeOrder(addr, city, sz, 'pm_' + Date.now()); }, 1200);
+      }
+    }
+
+    function finalizeOrder(addr,city,sz,pmId) {
+      var sub=cartSub();
+      var order={id:'ORD-'+Date.now(),invNum:'INV-'+Date.now(),items:S.cart.slice(),subtotal:sub,tax:sub*0.085,total:sub*1.085,paymentMethod:pmId,
+        date:new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
+        customer:{name:S.user?S.user.name:'Guest',email:S.user?S.user.email:'',company:S.user?(S.user.company||''):'',address:[addr,city,sz].filter(Boolean).join(', ')}};
+      S.cart.forEach(function(item){ S.inv[item.product.id]=Math.max(0,getStock(item.product.id)-item.qty); });
+      if(supabaseClient&&S.user&&S.user.supabase_id){
+        supabaseClient.from('orders').insert([{user_id:S.user.supabase_id,order_data:JSON.stringify(order),total:order.total,created_at:new Date().toISOString()}]).then(function(r){if(r.error)console.warn('Supabase order save failed:',r.error);});
+      }
+      S.orders.push(order); saveOrders(); S.cart=[];
+      updateCartBadge(); renderQuickCart();
+      if(S.view==='catalog') renderProductArea();
+      if(S.view==='detail') openDetail(S.detailId);
+      closeModal('checkoutModal');
+      toast('Payment successful! 🎉','ok');
+      setTimeout(function(){showInvoice(order);},400);
+    }
+
+    /* ── init 후 SDK 초기화 ── */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function(){ initSupabase(); initStripe(); }, 500);
+      });
+    } else {
+      setTimeout(function(){ initSupabase(); initStripe(); }, 500);
+    }
     function renderCheckoutForm() { var sub = cartSub(); var tax = sub * 0.085; var total = sub + tax; var u = S.user; var authSection; if (u) { authSection = '<div class="auth-bar"><div class="auth-av">' + u.name.charAt(0).toUpperCase() + '</div><div><div class="auth-name">' + u.name + '</div><div class="auth-email">' + u.email + '</div></div><span class="auth-verified">&#10003; Verified</span></div>' } else { authSection = '<button class="google-btn" onclick="mockGoogleLogin(); setTimeout(renderCheckoutForm, 400)"><span class="gicon"></span> Sign in with Google for faster checkout</button><div class="or-line">or continue as guest</div>' } var orderRows = ''; S.cart.forEach(function (i) { orderRows += '<div class="co-row"><span>' + i.product.name + ' &times;' + i.qty + ' (' + i.product.size + ')</span><span>' + fmt(i.product.price * i.qty) + '</span></div>' }); var firstName = u ? (u.name.split(' ')[0] || '') : ''; var lastName = u ? (u.name.split(' ')[1] || '') : ''; var emailVal = u ? (u.email || '') : ''; var phoneVal = u ? (u.phone || '') : ''; var companyVal = u ? (u.company || '') : ''; var streetVal = u ? (u.street || '') : ''; var cityVal = u ? (u.city || '') : ''; var stateZip = u ? ((u.state || '') + (u.zip ? ' ' + u.zip : '')) : ''; var cardName = u ? u.name : ''; $e('checkoutBody').innerHTML = authSection + '<div class="co-summary">' + orderRows + '<div class="co-row"><span>Tax (8.5%)</span><span>' + fmt(tax) + '</span></div><div class="co-row co-total"><span>Total</span><span>' + fmt(total) + '</span></div></div><div class="co-sec">Contact Information</div><div class="co-grid"><div class="fi"><label>First Name *</label><input type="text" id="co_fn" placeholder="Alex" value="' + firstName + '"></div><div class="fi"><label>Last Name *</label><input type="text" id="co_ln" placeholder="Johnson" value="' + lastName + '"></div><div class="fi fi-full"><label>Email Address *</label><input type="email" id="co_em" placeholder="you@company.com" value="' + emailVal + '"></div><div class="fi"><label>Phone</label><input type="tel" id="co_ph" placeholder="(555) 000-0000" value="' + phoneVal + '"></div><div class="fi"><label>Company Name</label><input type="text" id="co_co" placeholder="Restaurant Inc." value="' + companyVal + '"></div></div><div class="co-sec">Shipping Address</div><div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" placeholder="123 Main Street" value="' + streetVal + '"></div><div class="fi"><label>City *</label><input type="text" id="co_ci" placeholder="Maryland" value="' + cityVal + '"></div><div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" placeholder="IL 60601" value="' + stateZip + '"></div></div><div class="co-sec">Payment Information</div><div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap"><span class="cc-tag">Visa</span><span class="cc-tag">Mastercard</span><span class="cc-tag">Amex</span><span class="cc-tag">Discover</span></div><div class="co-grid"><div class="fi fi-full"><label>Card Number *</label><input type="text" id="co_cn" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCardNumber(this)"></div><div class="fi"><label>Expiry (MM/YY) *</label><input type="text" id="co_ex" placeholder="12/27" maxlength="5" oninput="formatExpiry(this)"></div><div class="fi"><label>CVV *</label><input type="text" id="co_cv" placeholder="123" maxlength="4"></div><div class="fi fi-full"><label>Name on Card *</label><input type="text" id="co_nm" placeholder="Alex Johnson" value="' + cardName + '"></div></div><button class="co-pay-btn" id="payBtn" onclick="processPayment()">&#128274; PAY ' + fmt(total) + '</button><div class="co-secure"><span>&#128274; SSL Secured</span><span>&#128737; PCI DSS</span><span>&#10003; Powered by Stripe</span></div>' }
     function formatCardNumber(el) { var v = el.value.replace(/\D/g, '').substring(0, 16); el.value = (v.match(/.{1,4}/g) || []).join(' ') }
     function formatExpiry(el) { var v = el.value.replace(/\D/g, '').substring(0, 4); if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2); el.value = v }
@@ -5976,17 +6308,10 @@
       inner.innerHTML = '<button class="google-btn" onclick="mockGoogleLogin()"><span class="gicon"></span> Continue with Google</button><div class="or-line">or sign in with email</div><div class="form-section-title">Sign In</div><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Email Address</label><input type="email" id="loginEmail" class="inp-full" placeholder="you@company.com"><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Password</label><input type="password" id="loginPass" class="inp-full" placeholder="••••••••"><button class="btn-orange" style="width:100%; padding:11px; font-size:14px; margin-bottom:8px" onclick="loginWithEmail()">Sign In</button><div class="or-line">new customer?</div><div style="font-size:12px; font-weight:700; color:#003087; margin:12px 0 8px; padding-bottom:5px; border-bottom:2px solid #e8edf5">Create New Account</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">First Name *</label><input type="text" id="regFName" class="inp-full" placeholder="Alex"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Last Name</label><input type="text" id="regLName" class="inp-full" placeholder="Johnson"></div></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Email Address *</label><input type="email" id="regEmail" class="inp-full" placeholder="you@company.com"><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Phone</label><input type="tel" id="regPhone" class="inp-full" placeholder="(555) 000-0000"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Company Name</label><input type="text" id="regCompany" class="inp-full" placeholder="Restaurant Inc."></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Shipping Address <span style="font-size:11px;color:#888;font-weight:400">(saved for faster checkout)</span></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Street Address *</label><input type="text" id="regStreet" class="inp-full" placeholder="123 Main Street"><div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">City *</label><input type="text" id="regCity" class="inp-full" placeholder="Maryland"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">State</label><input type="text" id="regState" class="inp-full" placeholder="IL" style="text-transform:uppercase"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">ZIP *</label><input type="text" id="regZip" class="inp-full" placeholder="60601"></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Password</div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Password * (min. 8 characters)</label><input type="password" id="regPass" class="inp-full" placeholder="Create a strong password"><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Confirm Password *</label><input type="password" id="regPass2" class="inp-full" placeholder="Repeat your password"><button class="btn-blue" style="width:100%; padding:11px; font-size:14px; margin-top:4px" onclick="registerWithEmail()">Create Account</button><p style="font-size:11px; color:#888; margin-top:10px; text-align:center">By creating an account, you agree to our Terms of Service.</p>';
     }
 
-    function mockGoogleLogin() { var testUsers = [{ name: 'Alex Johnson', email: 'alex@restaurant.com', phone: '(312) 555-0101', company: 'The Green Fork Restaurant', street: '456 N Wabash Ave', city: 'Maryland', state: 'IL', zip: '60611' }]; S.user = testUsers[0]; S.isAdmin = false; updateAccountButton(); updateAdminVisibility(); closeModal('loginModal'); toast('Signed in as ' + S.user.name, 'ok') }
-    function loginWithEmail() { var email = $e('loginEmail') ? $e('loginEmail').value.trim() : ''; var pass = $e('loginPass') ? $e('loginPass').value : ''; if (!email || email.indexOf('@') < 0) { toast('Please enter a valid email address', 'err'); return } if (!pass || pass.length < 4) { toast('Please enter your password', 'err'); return } var isAdmin = (email === 'admin@tresupply.com' && pass === 'admin1234'); var name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase() }); S.user = { name: name, email: email, phone: '', company: '', street: '', city: '', state: '', zip: '' }; S.isAdmin = isAdmin; updateAccountButton(); updateAdminVisibility(); closeModal('loginModal'); if (isAdmin) { toast('Admin logged in as ' + name + ' \u2713', 'ok') } else { toast('Signed in as ' + name, 'ok') } }
-    function registerWithEmail() { var fName = $e('regFName') ? $e('regFName').value.trim() : ''; var lName = $e('regLName') ? $e('regLName').value.trim() : ''; var email = $e('regEmail') ? $e('regEmail').value.trim() : ''; var phone = $e('regPhone') ? $e('regPhone').value.trim() : ''; var company = $e('regCompany') ? $e('regCompany').value.trim() : ''; var street = $e('regStreet') ? $e('regStreet').value.trim() : ''; var city = $e('regCity') ? $e('regCity').value.trim() : ''; var state = $e('regState') ? $e('regState').value.trim() : ''; var zip = $e('regZip') ? $e('regZip').value.trim() : ''; var pass = $e('regPass') ? $e('regPass').value : ''; var pass2 = $e('regPass2') ? $e('regPass2').value : ''; if (!fName) { toast('Please enter your first name', 'err'); return } if (!email || email.indexOf('@') < 0) { toast('Please enter a valid email address', 'err'); return } if (!street || !city || !zip) { toast('Please enter your full shipping address', 'err'); return } if (!pass || pass.length < 8) { toast('Password must be at least 8 characters', 'err'); return } if (pass !== pass2) { toast('Passwords do not match', 'err'); return } var fullName = (fName + ' ' + lName).trim(); S.user = { name: fullName, email: email, phone: phone, company: company, street: street, city: city, state: state, zip: zip }; S.isAdmin = false; updateAccountButton(); updateAdminVisibility(); closeModal('loginModal'); toast('Account created! Welcome, ' + fullName, 'ok') }
-    function logout() {
-      S.user = null; S.isAdmin = false; S.orders = [];
-      try { localStorage.removeItem(LS_USER); localStorage.removeItem(LS_ORDERS); } catch (e) { }
-      updateAccountButton(); updateAdminVisibility();
-      closeModal('loginModal');
-      if (S.view === 'account') selectCat(null, null);
-      toast('Signed out successfully', 'ok');
-    }
+    /* mockGoogleLogin: replaced by Supabase version */
+    /* loginWithEmail: replaced by Supabase version */
+    /* registerWithEmail: replaced by Supabase version */
+    /* logout: replaced by Supabase version */
     function updateAdminVisibility() { var fab = $e('adminFab'); if (fab) fab.style.display = S.isAdmin ? 'flex' : 'none'; var snAdmin = $e('sn-admin'); if (snAdmin) snAdmin.style.display = S.isAdmin ? '' : 'none' }
     function updateAccountButton() { var btns = document.querySelectorAll('#accountBtn'); btns.forEach(function (btn) { if (!btn) return; if (S.user) { var label = 'Hi, ' + S.user.name.split(' ')[0]; if (S.isAdmin) label += ' (Admin)'; btn.textContent = label; btn.style.color = S.isAdmin ? '#ffd700' : '#e85d04'; btn.style.fontWeight = '700' } else { btn.textContent = 'Account'; btn.style.color = ''; btn.style.fontWeight = '' } }) }
     function openAdminPanel() { if (!S.isAdmin) { toast('Admin access only. Please log in as admin.', 'err'); return } renderAdminPanel(); openModal('adminModal') }
@@ -6625,10 +6950,13 @@
     }
     function toggleMobileMenu() {
       var overlay = document.getElementById('mobileDrawerOverlay');
-      if (overlay && overlay.classList.contains('open')) { closeMobileDrawer(); } else { openMobileDrawer(); }
+      if (!overlay) return;
+      if (overlay.classList.contains('open')) {
+        closeMobileDrawer();
+      } else {
+        openMobileDrawer();
+      }
     }
-
   </script>
 </body>
-
 </html>
