@@ -6020,7 +6020,9 @@
       toast('Signed out successfully','ok');
     }
 
-    /* ── Stripe Checkout ── */
+    /* ── Stripe Checkout Session → stripe.com 으로 리다이렉트 ── */
+    var SUPABASE_EDGE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co/functions/v1/create-checkout';
+
     function openCheckout() {
       var _qc=$e('quickCart'); if(_qc) _qc.style.display='none';
       if (S.cart.length===0) { toast('Cart is empty','err'); return; }
@@ -6029,9 +6031,57 @@
         openLoginModal();
         return;
       }
-      /* Stripe 로드 여부와 관계없이 항상 체크아웃 폼 열기 */
-      renderStripeCheckoutForm();
-      openModal('checkoutModal');
+      /* Supabase Edge Function으로 Stripe Checkout Session 생성 */
+      var loadingToast = document.createElement('div');
+      loadingToast.className = 'toast';
+      loadingToast.innerHTML = '⏳ 결제 페이지 준비 중...';
+      loadingToast.style.cssText = 'background:#fff;border:1px solid #ccc;padding:12px 20px;border-radius:3px;font-size:14px;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;box-shadow:0 3px 14px rgba(0,0,0,.15)';
+      document.body.appendChild(loadingToast);
+
+      var lineItems = S.cart.map(function(item) {
+        return {
+          name:     item.product.name,
+          price:    Math.round(item.product.price * 100), /* cents */
+          quantity: item.qty,
+          sku:      item.product.sku,
+          size:     item.product.size
+        };
+      });
+
+      fetch(SUPABASE_EDGE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          line_items:     lineItems,
+          customer_email: S.user.email,
+          customer_name:  S.user.name,
+          success_url:    window.location.origin + window.location.pathname + '?order=success',
+          cancel_url:     window.location.origin + window.location.pathname + '?order=cancelled'
+        })
+      })
+      .then(function(res) {
+        if (!res.ok) return res.text().then(function(t) { throw new Error(t); });
+        return res.json();
+      })
+      .then(function(data) {
+        document.body.removeChild(loadingToast);
+        if (data.url) {
+          /* Stripe Checkout 페이지로 이동 */
+          window.location.href = data.url;
+        } else {
+          toast('결제 페이지 생성 실패: ' + (data.error || 'Unknown'), 'err');
+        }
+      })
+      .catch(function(err) {
+        if (document.body.contains(loadingToast)) document.body.removeChild(loadingToast);
+        console.warn('Checkout session error:', err.message);
+        /* Edge Function 미배포시 → 내부 폼으로 폴백 */
+        renderStripeCheckoutForm();
+        openModal('checkoutModal');
+      });
     }
 
     function renderStripeCheckoutForm() {
@@ -7149,7 +7199,22 @@
       }
     }
 
-    function init() { loadCustomProducts(); loadUserProfile(); loadOrders(); if (S.user) { updateAccountButton(); updateAdminVisibility(); } showView('v-catalog'); renderCatList(); renderProductArea(); buildDesktopNavTabs(); buildMobileCatTabs(); updateMobileUI(); applyFixedBars(); }
+    function init() {
+      /* Stripe 결제 완료 후 리다이렉트 처리 */
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('order') === 'success') {
+        setTimeout(function() {
+          toast('🎉 결제가 완료되었습니다! 주문 확인 이메일을 확인해주세요.', 'ok');
+          /* URL에서 파라미터 제거 */
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 800);
+      } else if (urlParams.get('order') === 'cancelled') {
+        setTimeout(function() {
+          toast('결제가 취소되었습니다.', 'err');
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 800);
+      }
+      loadCustomProducts(); loadUserProfile(); loadOrders(); if (S.user) { updateAccountButton(); updateAdminVisibility(); } showView('v-catalog'); renderCatList(); renderProductArea(); buildDesktopNavTabs(); buildMobileCatTabs(); updateMobileUI(); applyFixedBars(); }
     window.addEventListener('resize', applyFixedBars);
     init();
     /* 렌더 완료 후 한 번 더 실측 */
