@@ -1,0 +1,8 @@
+{
+  "name": "tre-supply",
+  "version": "1.0.0",
+  "description": "TRE Supply Co. E-commerce",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
