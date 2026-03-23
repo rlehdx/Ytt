@@ -5446,7 +5446,7 @@
         var qtyStepId = 'pqty_' + p.id;
         var cartBtn = isOut
           ? '<button class="pcard-btn-cart" disabled>Sold Out</button>'
-          : '<button class="pcard-btn-cart" onclick="event.stopPropagation();addToCartFromCard(\'' + p.id + '\',\'' + qtyStepId + '\')">&#43; Add Cart</button>';
+          : '<button class="pcard-btn-cart" onclick="event.stopPropagation();addToCartFromCard(\'' + p.id + '\',\'' + qtyStepId + '\')"> Add Cart</button>';
         var qtyRow = isOut ? '' : '<div class="pcard-qty-row" onclick="event.stopPropagation()">'
           + '<span class="pcard-qty-lbl">Qty:</span>'
           + '<button class="pcard-qb" onclick="event.stopPropagation();adjPcardQty(\'' + qtyStepId + '\',-1)">&#8722;</button>'
