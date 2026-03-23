@@ -3115,7 +3115,10 @@
       line-height: 1;
       margin-top: 4px;
     }
-
+    .pcard-sku {
+      font-size: 11px;
+      color: #000000;
+    }
     .pcard-actions {
       display: flex;
       gap: 6px;
@@ -5459,8 +5462,9 @@
           + '<div class="pcard-body">'
           + '<div class="pcard-name">' + p.name + '</div>'
           + '<div class="pcard-size">' + p.size + '</div>'
-          + '<div class="pcard-price">' + fmt(p.price) + '<span class="pcard-each"> / each</span></div>'
           + '<div class="pcard-sku">' + p.sku + '</div>'
+          + '<div class="pcard-price">' + fmt(p.price) + '<span class="pcard-each"> / each</span></div>'
+          + 
           + qtyRow
           + '<div class="pcard-actions">' + cartBtn
 
