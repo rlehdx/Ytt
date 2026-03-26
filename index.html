@@ -6005,33 +6005,67 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
         .then(function(r) { if (r.error) console.error('updateStock error:', r.error); });
     }
 
-    /* ── 주문 DB에 저장 ── */
+/* ── 주문 DB에 저장 (RLS 완벽 대응) ── */
     function saveOrderToDB(order) {
-      if (!supabaseClient || !S.user) return;
-      var dbOrder = {
-        id: order.id, inv_num: order.invNum,
-        user_id: S.user.supabase_id || null,
-        customer_name: order.customer.name,
-        customer_email: order.customer.email,
-        customer_company: order.customer.company || '',
-        shipping_address: order.customer.address,
-        subtotal: order.subtotal, tax: order.tax, total: order.total,
-        payment_method: order.paymentMethod || '', status: 'completed'
-      };
-      supabaseClient.from('orders').insert(dbOrder).then(function(r) {
-        if (r.error) {
- return; }
-        /* order_items 저장 */
-        var items = order.items.map(function(item) {
-          return {
-            order_id: order.id, product_id: item.product.id,
-            product_name: item.product.name, product_sku: item.product.sku,
-            product_size: item.product.size, unit_price: item.product.price,
-            quantity: item.qty, subtotal: item.product.price * item.qty
-          };
+      if (!supabaseClient) return;
+
+      // ★ 핵심: 결제창에서 돌아왔을 때, 주문을 넣기 전 Supabase 세션(로그인 상태)을 확실하게 쥐고 있는지 먼저 확인합니다.
+      supabaseClient.auth.getSession().then(function(sessionRes) {
+        var session = sessionRes.data.session;
+        
+        // 세션이 없다면 RLS가 무조건 차단하므로 에러를 띄우고 멈춤
+        if (!session) {
+          console.error('❌ Supabase 세션 없음: 로그인 상태가 확인되지 않아 RLS 정책에 의해 차단됩니다.');
+          return;
+        }
+
+        var currentUserId = session.user.id; // 세션에서 정확한 회원 ID를 빼냄
+
+        var dbOrder = {
+          id: order.id,
+          inv_num: order.invNum,
+          user_id: currentUserId, // ⬅️ 여기에 정확한 ID가 들어가야 RLS의 (auth.uid() = user_id) 조건을 통과함!
+          customer_name: order.customer.name,
+          customer_email: order.customer.email,
+          customer_company: order.customer.company || '',
+          shipping_address: order.customer.address,
+          subtotal: order.subtotal,
+          tax: order.tax,
+          total: order.total,
+          payment_method: order.paymentMethod || 'Stripe Checkout',
+          status: 'completed'
+        };
+
+        // 1. orders 테이블 저장
+        supabaseClient.from('orders').insert(dbOrder).then(function(resOrder) {
+          if (resOrder.error) {
+            console.error('❌ Supabase 주문 저장 실패 (orders):', resOrder.error.message);
+            return;
+          }
+          console.log('✅ Supabase 주문 저장 성공 (orders)!');
+          
+          // 2. order_items 테이블 저장
+          var items = order.items.map(function(item) {
+            return {
+              order_id: order.id,
+              product_id: item.product.id,
+              product_name: item.product.name,
+              product_sku: item.product.sku || '',
+              product_size: item.product.size || '',
+              unit_price: item.product.price,
+              quantity: item.qty,
+              subtotal: item.product.price * item.qty
+            };
+          });
+          
+          supabaseClient.from('order_items').insert(items).then(function(resItem) {
+            if (resItem.error) {
+              console.error('❌ 상세 품목 저장 실패 (order_items):', resItem.error.message);
+            } else {
+              console.log('✅ Supabase 상세 품목 저장 성공 (order_items)!');
+            }
+          });
         });
-        supabaseClient.from('order_items').insert(items)
-          .then(function(r2) { if (r2.error) console.error('order_items error:', r2.error); });
       });
     }
 
