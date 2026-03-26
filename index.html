@@ -6451,21 +6451,20 @@ function saveOrderToDB(order) {
       });
     }
 
- function finalizeOrder(addr, city, sz, pmId) {
+function finalizeOrder(addr, city, sz, pmId) {
   var sub = cartSub();
   
-  // 1. S.orders 배열이 없으면 초기화하여 push 오류 방지
+  // 배열 안전 장치
   if (!S.orders) S.orders = [];
 
-  // 2. 주문 객체 생성 (구조 최적화)
   var order = {
     id: 'ORD-' + Date.now(),
     invNum: 'INV-' + Date.now(),
-    items: JSON.parse(JSON.stringify(S.cart)), // 카트 복사본 저장
+    items: JSON.parse(JSON.stringify(S.cart)), 
     subtotal: sub,
     tax: sub * 0.06,
-    total: sub * 1.06, // 6% 세율 반영
-    paymentMethod: pmId || 'Stripe_Success',
+    total: sub * 1.06,
+    paymentMethod: pmId || 'CREDIT_CARD',
     date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     customer: {
       name: S.user ? S.user.name : 'Guest',
@@ -6475,41 +6474,28 @@ function saveOrderToDB(order) {
     }
   };
 
-  // 3. 재고 차감 (로컬 상태 업데이트)
-  S.cart.forEach(function(item) {
-    if (S.inv[item.product.id] !== undefined) {
-      S.inv[item.product.id] = Math.max(0, getStock(item.product.id) - item.qty);
-    }
+  // 재고 차감 및 로컬 저장
+  S.cart.forEach(function(item){ 
+    S.inv[item.product.id] = Math.max(0, getStock(item.product.id) - item.qty); 
   });
-
-  // 4. 데이터 저장 (로컬 + DB)
-  S.orders.push(order); // 로컬 Order History에 추가
-  saveOrders();        // localStorage 저장
   
-  if (supabaseClient && S.user) {
-    saveOrderToDB(order); // Supabase 테이블에 저장
-  }
+  S.orders.push(order); 
+  saveOrders(); 
 
-  // 5. 카트 비우기 및 UI 갱신
+  // DB 저장 함수 호출 (스키마에 맞춤)
+  saveOrderToDB(order); 
+
+  // UI 초기화
   S.cart = [];
   saveCart();
   updateCartBadge();
   renderQuickCart();
-
-  // 6. 화면 상태에 따른 리렌더링
-  if (S.view === 'catalog') renderProductArea();
-  if (S.view === 'detail') openDetail(S.detailId);
-  if (S.view === 'cart') renderCartPage();
-
-  // 7. 완료 처리
-  _checkoutOpen = false;
+  
+  if(S.view === 'catalog') renderProductArea();
   closeModal('checkoutModal');
   toast('Payment successful! 🎉', 'ok');
   
-  // 8. 인보이스 표시
-  setTimeout(function() {
-    showInvoice(order);
-  }, 400);
+  setTimeout(function(){ showInvoice(order); }, 400);
 }
 
     /* ── init 후 SDK 초기화 ── */
