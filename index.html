@@ -5098,10 +5098,10 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
     <div class="footer-bottom"
       style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:10px">
-        <img class="f-logo-img" src="./images/2 Long Chefvesta PNG.png" alt="Chefvesta Logo" style="height:30px;object-fit:contain">
+        <img class="f-logo-img" src="./images/FullLongwithwhitehat.png" alt="Chefvesta Logo" style="height:30px;object-fit:contain">
         <span style="font-size:7px;font-weight:900;color:#fff;letter-spacing:-.2px;margin-top: 20px">By <span
             style="color:#aacf38"></span></span>
-     <img class="f-logo-img2" src="./images/TRE Long Logo.png" alt="Chefvesta Logo" style="height:25px;object-fit:contain">
+     <img class="f-logo-img2" src="./images/TRELongLogo.png" alt="Chefvesta Logo" style="height:25px;object-fit:contain">
       </div>
       <span style="font-size:11px;color:rgba(255,255,255,.4)">&copy; 2026 TOP Restaurant Equipment. Inc.  &nbsp;|&nbsp; Maryland
         USA</span>
@@ -5708,7 +5708,7 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
 
     var SUPABASE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co';
     var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZka2VjZW9qbGNuYnd5cHBvZnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDY3ODgsImV4cCI6MjA4OTY4Mjc4OH0.SzULEzj6ivsndI97BoHd1vo0OEHhcv6wjERDyeHATEw';
-    var STRIPE_PK = 'pk_live_51TEupMH8RScrfE57uZHpG12CNd9HmGN6JYivAOt4u21yhH5SnwmojV8i9fanYkVCPtYmIlN3g7gHKpiTLgPGda7i002TSTYNZ3';
+    var STRIPE_PK = 'pk_test_51TCQZgERxQ0bHKfyP6vKbkiXaJZvWwoSrmgjMGPf1TjTilpnSJABi8QEozHuwm9SXZ7XkbiHTGKIBN4mgOyFMV1A00vOO9ijCc';
     var supabaseClient = null;
     var stripeInstance = null;
 
@@ -6068,7 +6068,6 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
         });
       });
     }
-
     /* ── 내 주문 DB에서 로드 ── */
     function loadOrdersFromDB() {
       if (!supabaseClient || !S.user || !S.user.supabase_id) return;
