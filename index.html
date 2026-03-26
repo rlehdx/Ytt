@@ -5698,6 +5698,30 @@
     var supabaseClient = null;
     var stripeInstance = null;
 
+    /* ════════════════════════════════════════════
+       관리자 이메일 목록 — 여러 개 등록 가능
+       Supabase profiles.is_admin=true 가 우선,
+       아래 목록은 DB 없어도 동작하는 폴백
+       ════════════════════════════════════════════ */
+    var OWNER_EMAIL  = 'kay@tr-equipment.com';          /* 기본 관리자 */
+    var ADMIN_EMAILS = [
+      'kay@tr-equipment.com',
+      'admin@tresupply.com'
+    ];
+    var STORE_NAME = 'Chefvesta';
+    var STORE_ADDR = '6381 Old Branch Ave, Camp Springs, MD 20748';
+    var STORE_PHONE = '(800) 555-0100';
+
+    /* 이메일이 admin 목록에 있는지 체크하는 헬퍼 */
+    function isAdminEmail(email) {
+      if (!email) return false;
+      var lower = email.toLowerCase().trim();
+      for (var i = 0; i < ADMIN_EMAILS.length; i++) {
+        if (ADMIN_EMAILS[i].toLowerCase() === lower) return true;
+      }
+      return false;
+    }
+
     function initSupabase() {
       /* GoDaddy HTTPS 환경: Supabase 연결 */
       if (window.location.protocol === 'file:') {
@@ -5743,13 +5767,13 @@
               };
 
               /* ── STEP 1: OWNER_EMAIL 즉시 판별 (RLS/DB 무관) ── */
-              if (sbUser.email === OWNER_EMAIL) {
+              if (isAdminEmail(sbUser.email)) {
                 S.isAdmin = true;
                 S.user.is_admin = true;
                 saveUserProfile();
                 updateAccountButton();
                 updateAdminVisibility();
-                console.log('[AUTH] ✅ OWNER_EMAIL 즉시 admin 확인');
+                console.log('[AUTH] ✅ Admin confirmed by email:', sbUser.email);
               }
 
               /* ── STEP 2: DB 추가 확인 ── */
@@ -5760,14 +5784,14 @@
                     S.isAdmin = true;
                     console.log('[AUTH] ✅ DB에서 admin 확인');
                   } else {
-                    S.isAdmin = (sbUser.email === OWNER_EMAIL);
-                    console.log('[AUTH] 이메일 폴백 isAdmin:', S.isAdmin, '| 이메일:', sbUser.email, '| OWNER:', OWNER_EMAIL);
+                    S.isAdmin = isAdminEmail(sbUser.email);
+                    console.log('[AUTH] 이메일 폴백 isAdmin:', S.isAdmin, '| 이메일:', sbUser.email);
                   }
                   S.user.is_admin = S.isAdmin;
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
                 }).catch(function(err) {
                   console.error('[AUTH] profiles 조회 에러:', err);
-                  S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                  S.isAdmin = isAdminEmail(sbUser.email);
                   console.log('[AUTH] catch 폴백 isAdmin:', S.isAdmin);
                   S.user.is_admin = S.isAdmin;
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
@@ -5798,12 +5822,12 @@
             };
 
             /* ── OWNER_EMAIL 즉시 판별 ── */
-            if (sbUser.email === OWNER_EMAIL) {
+            if (isAdminEmail(sbUser.email)) {
               S.isAdmin = true;
               S.user.is_admin = true;
               updateAccountButton();
               updateAdminVisibility();
-              console.log('[SESSION] ✅ OWNER_EMAIL 즉시 admin');
+              console.log('[SESSION] ✅ Admin confirmed by email:', sbUser.email);
             }
 
             supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).maybeSingle()
@@ -5813,14 +5837,14 @@
                   S.isAdmin = true;
                   console.log('[SESSION] ✅ DB admin 확인');
                 } else {
-                  S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                  S.isAdmin = isAdminEmail(sbUser.email);
                   console.log('[SESSION] 이메일 폴백 isAdmin:', S.isAdmin);
                 }
                 S.user.is_admin = S.isAdmin;
                 updateAccountButton(); updateAdminVisibility();
               }).catch(function(err) {
                 console.error('[SESSION] profiles 에러:', err);
-                S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                S.isAdmin = isAdminEmail(sbUser.email);
                 S.user.is_admin = S.isAdmin;
                 updateAccountButton(); updateAdminVisibility();
               });
@@ -6459,10 +6483,7 @@
     var EMAILJS_PUBLIC_KEY     = 'YOUR_EMAILJS_PUBLIC_KEY';   /* ← 교체 필요 */
     var EMAILJS_SERVICE_ID     = 'YOUR_SERVICE_ID';            /* ← 교체 필요 */
     var EMAILJS_TEMPLATE_ORDER = 'YOUR_TEMPLATE_ID';           /* ← 교체 필요 */
-    var OWNER_EMAIL            = 'kay@tr-equipment.com';       /* 관리자 이메일 */
-    var STORE_NAME             = 'Chefvesta';
-    var STORE_ADDR             = '6381 Old Branch Ave, Camp Springs, MD 20748';
-    var STORE_PHONE            = '(800) 555-0100';
+    /* OWNER_EMAIL, STORE_NAME, STORE_ADDR, STORE_PHONE 은 위 SUPABASE 섹션에서 선언됨 */
 
     var _emailjsReady = false;
     function initEmailJS() {
@@ -6691,7 +6712,7 @@
     function loadUserProfile() {
       try {
         var raw = localStorage.getItem(LS_USER);
-        if (raw) { var u = JSON.parse(raw); S.user = u; S.isAdmin = (u.is_admin === true); }
+        if (raw) { var u = JSON.parse(raw); S.user = u; S.isAdmin = (u.is_admin === true) || isAdminEmail(u.email); }
       } catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
     function saveOrders() {
@@ -7043,7 +7064,7 @@
                 updateAdminVisibility();
                 renderAdminPanel();
                 openModal('adminModal');
-              } else if (S.user.email === OWNER_EMAIL) {
+              } else if (isAdminEmail(S.user.email)) {
                 /* 이메일 폴백 */
                 S.isAdmin = true;
                 S.user.is_admin = true;
@@ -7057,7 +7078,7 @@
             }).catch(function(err) {
               console.error('[Admin Debug] profiles 조회 실패:', err);
               /* profiles 테이블 없는 경우 — 이메일로 폴백 */
-              if (S.user.email === OWNER_EMAIL) {
+              if (isAdminEmail(S.user.email)) {
                 S.isAdmin = true;
                 S.user.is_admin = true;
                 saveUserProfile();
