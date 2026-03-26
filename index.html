@@ -1,3 +1,4 @@
+web application/stitch/projects/3784952564592148410/screens/4297684958757219056
 <!DOCTYPE html>
 <html lang="en">
 
@@ -2003,7 +2004,12 @@
     }
 
     .f-logo-img {
-      height: 55px;
+      height: 45px;
+      object-fit: contain
+    }
+
+    .f-logo-img2 {
+      height: 40px;
       object-fit: contain
     }
 
@@ -4858,7 +4864,7 @@
 
         <div class="qcart-wrap">
           <button class="qcart-btn" id="cartBtnEl" onclick="openCart()">
-            
+            <span class="desktop-only" style="display:flex;align-items:center;gap:6px">&#128722; Quick Cart&nbsp;</span>
             <span class="mobile-only" style="flex-direction:column;align-items:center;gap:2px"><span
                 class="mob-icon">&#128722;</span>Cart</span>
           </button>
@@ -4948,7 +4954,7 @@
                 <span style="font-size:22px;flex-shrink:0">&#9993;</span>
                 <div>
                   <div style="font-weight:700;font-size:13px;color:#111;margin-bottom:3px">Email</div>
-                  <div style="font-size:12.5px;color:#555"><a href="mailto:support@chefvesta.com" style="color:#5a7a00;font-weight:700"><span class="__cf_email__" data-cfemail="c1aaa0b881b5b3eca4b0b4a8b1aca4afb5efa2aeac">[email&#160;protected]</span></a><br><span
+                  <div style="font-size:12.5px;color:#555"><a href="/cdn-cgi/l/email-protection#a2d1d7d2d2cdd0d6e2c1cac7c4d4c7d1d6c38cc1cdcf" style="color:#5a7a00;font-weight:700"><span class="__cf_email__" data-cfemail="c1aaa0b881b5b3eca4b0b4a8b1aca4afb5efa2aeac">[email&#160;protected]</span></a><br><span
                       style="color:#888">We reply within 24 hours</span>
                   </div>
                 </div>
@@ -5092,18 +5098,19 @@
     <div class="footer-bottom"
       style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:10px">
-        <img class="f-logo-img" src="./images/2 Long Chefvesta PNG.png" alt="Chefvesta Logo" style="height:36px;object-fit:contain">
-        <span style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.2px">TRE Supply <span
-            style="color:#aacf38">Co.</span></span>
+        <img class="f-logo-img" src="./images/2 Long Chefvesta PNG.png" alt="Chefvesta Logo" style="height:30px;object-fit:contain">
+        <span style="font-size:7px;font-weight:900;color:#fff;letter-spacing:-.2px;margin-top: 20px">By <span
+            style="color:#aacf38"></span></span>
+     <img class="f-logo-img2" src="./images/TRE Long Logo.png" alt="Chefvesta Logo" style="height:25px;object-fit:contain">
       </div>
-      <span style="font-size:11px;color:rgba(255,255,255,.4)">&copy; 2026 TRE Supply Co. &nbsp;|&nbsp; Maryland
+      <span style="font-size:11px;color:rgba(255,255,255,.4)">&copy; 2026 TOP Restaurant Equipment. Inc.  &nbsp;|&nbsp; Maryland
         USA</span>
     </div>
   </footer>
 
   
   
-  <script type="text/javascript">
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/javascript">
     /* ============================================================================
        ⭐⭐⭐ [사용자 설정 영역] ⭐⭐⭐
        카테고리 이름과 그리드 카드에 들어갈 이미지를 여기서 한 번만 수정하세요!
@@ -5692,27 +5699,29 @@
     /* ⚠️  ANON KEY는 공개 키입니다 (RLS 정책으로 보호됨).
        GoDaddy 환경변수 사용 불가 → Supabase Dashboard에서 RLS 필수 확인.
        절대 SERVICE_ROLE KEY를 여기 넣지 마세요. */
+    /* ── localStorage 키 상수 — 가장 먼저 선언 (호이스팅 문제 방지) ── */
+    var LS_KEY    = 'tre_custom_products';
+    var LS_CART   = 'tre_cart';
+    var LS_USER   = 'tre_user_profile';
+    var LS_ORDERS = 'tre_user_orders';
+    var LS_STATE  = 'tre_product_state_v2';
+
     var SUPABASE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co';
     var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZka2VjZW9qbGNuYnd5cHBvZnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDY3ODgsImV4cCI6MjA4OTY4Mjc4OH0.SzULEzj6ivsndI97BoHd1vo0OEHhcv6wjERDyeHATEw';
-    var STRIPE_PK = 'pk_test_51TCQZgERxQ0bHKfyP6vKbkiXaJZvWwoSrmgjMGPf1TjTilpnSJABi8QEozHuwm9SXZ7XkbiHTGKIBN4mgOyFMV1A00vOO9ijCc';
+    var STRIPE_PK = 'pk_live_51TEupMH8RScrfE57uZHpG12CNd9HmGN6JYivAOt4u21yhH5SnwmojV8i9fanYkVCPtYmIlN3g7gHKpiTLgPGda7i002TSTYNZ3';
     var supabaseClient = null;
     var stripeInstance = null;
 
     /* ════════════════════════════════════════════
-       관리자 이메일 목록 — 여러 개 등록 가능
+       관리자 이메일 목록 — 여기에 추가하면 됩니다
        Supabase profiles.is_admin=true 가 우선,
-       아래 목록은 DB 없어도 동작하는 폴백
+       아래 목록은 DB 없어도 작동하는 이메일 폴백
        ════════════════════════════════════════════ */
-    var OWNER_EMAIL  = 'kay@tr-equipment.com';          /* 기본 관리자 */
     var ADMIN_EMAILS = [
       'kay@tr-equipment.com',
       'admin@tresupply.com'
     ];
-    var STORE_NAME = 'Chefvesta';
-    var STORE_ADDR = '6381 Old Branch Ave, Camp Springs, MD 20748';
-    var STORE_PHONE = '(800) 555-0100';
 
-    /* 이메일이 admin 목록에 있는지 체크하는 헬퍼 */
     function isAdminEmail(email) {
       if (!email) return false;
       var lower = email.toLowerCase().trim();
@@ -5785,7 +5794,7 @@
                     console.log('[AUTH] ✅ DB에서 admin 확인');
                   } else {
                     S.isAdmin = isAdminEmail(sbUser.email);
-                    console.log('[AUTH] 이메일 폴백 isAdmin:', S.isAdmin, '| 이메일:', sbUser.email);
+                    console.log('[AUTH] 이메일 폴백 isAdmin:', S.isAdmin, 'email:', sbUser.email);
                   }
                   S.user.is_admin = S.isAdmin;
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
@@ -5798,6 +5807,8 @@
                 });
               closeModal('loginModal');
               toast('Signed in as ' + S.user.name, 'ok');
+              /* 로그인 직후 주문 내역 DB에서 동기화 */
+              setTimeout(function() { loadOrdersFromDB(); }, 500);
             } else if (event === 'SIGNED_OUT') {
               S.user = null; S.isAdmin = false; S.orders = [];
               updateAccountButton(); updateAdminVisibility();
@@ -5848,6 +5859,8 @@
                 S.user.is_admin = S.isAdmin;
                 updateAccountButton(); updateAdminVisibility();
               });
+            /* 세션 복원 시 주문 내역 DB에서 동기화 */
+            setTimeout(function() { loadOrdersFromDB(); }, 800);
           }
           /* DB에서 제품/재고 로드 (로그인 여부 무관) */
           loadProductsFromDB();
@@ -5992,54 +6005,36 @@
         .then(function(r) { if (r.error) console.error('updateStock error:', r.error); });
     }
 
-function saveOrderToDB(order) {
-  if (!supabaseClient) return;
-
-  // 스키마 컬럼명과 1:1 매핑
-  var dbOrder = {
-    id: order.id,                         // text
-    inv_num: order.invNum,                // text
-    user_id: (S.user && S.user.supabase_id) ? S.user.supabase_id : null, // UUID (null 허용)
-    customer_name: order.customer.name,   // text
-    customer_email: order.customer.email, // text
-    customer_company: order.customer.company, // text
-    shipping_address: order.customer.address, // text
-    subtotal: order.subtotal,             // numeric
-    tax: order.tax,                       // numeric
-    total: order.total,                   // numeric
-    payment_method: order.paymentMethod,  // text
-    status: 'completed'                   // text
-  };
-
-  supabaseClient.from('orders').insert(dbOrder).then(function(res) {
-    if (res.error) {
-      console.error('Supabase 저장 실패:', res.error.message);
-      // UUID 형식이 틀렸거나 컬럼명이 다를 경우 여기서 에러 출력
-    } else {
-      console.log('Supabase 저장 성공!');
-    }
-  });
-}
-    
-    // 주문 상세 품목(order_items) 저장
-    var items = order.items.map(function(item) {
-      return {
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_sku: item.product.sku || '',
-        product_size: item.product.size || '',
-        unit_price: item.product.price,
-        quantity: item.qty,
-        subtotal: item.product.price * item.qty
+    /* ── 주문 DB에 저장 ── */
+    function saveOrderToDB(order) {
+      if (!supabaseClient || !S.user) return;
+      var dbOrder = {
+        id: order.id, inv_num: order.invNum,
+        user_id: S.user.supabase_id || null,
+        customer_name: order.customer.name,
+        customer_email: order.customer.email,
+        customer_company: order.customer.company || '',
+        shipping_address: order.customer.address,
+        subtotal: order.subtotal, tax: order.tax, total: order.total,
+        payment_method: order.paymentMethod || '', status: 'completed'
       };
-    });
-    
-    supabaseClient.from('order_items').insert(items).then(function(resItem) {
-      if (resItem.error) console.error('Items 저장 실패:', resItem.error.message);
-    });
-  });
-}
+      supabaseClient.from('orders').insert(dbOrder).then(function(r) {
+        if (r.error) {
+ return; }
+        /* order_items 저장 */
+        var items = order.items.map(function(item) {
+          return {
+            order_id: order.id, product_id: item.product.id,
+            product_name: item.product.name, product_sku: item.product.sku,
+            product_size: item.product.size, unit_price: item.product.price,
+            quantity: item.qty, subtotal: item.product.price * item.qty
+          };
+        });
+        supabaseClient.from('order_items').insert(items)
+          .then(function(r2) { if (r2.error) console.error('order_items error:', r2.error); });
+      });
+    }
+
     /* ── 내 주문 DB에서 로드 ── */
     function loadOrdersFromDB() {
       if (!supabaseClient || !S.user || !S.user.supabase_id) return;
@@ -6357,6 +6352,14 @@ function saveOrderToDB(order) {
       })
       .then(function(data) {
         if (data.url) {
+          /* 결제 후 복귀 시 주문 복원에 필요한 데이터를 sessionStorage에 저장 */
+          try {
+            sessionStorage.setItem('_pendingOrder', JSON.stringify({
+              cart: S.cart,
+              addr: addr, city: city, sz: sz,
+              userEmail: S.user ? S.user.email : ''
+            }));
+          } catch(e) {}
           /* ✅ Stripe Checkout 페이지로 이동 */
           window.location.href = data.url;
         } else {
@@ -6451,52 +6454,22 @@ function saveOrderToDB(order) {
       });
     }
 
-function finalizeOrder(addr, city, sz, pmId) {
-  var sub = cartSub();
-  
-  // 배열 안전 장치
-  if (!S.orders) S.orders = [];
-
-  var order = {
-    id: 'ORD-' + Date.now(),
-    invNum: 'INV-' + Date.now(),
-    items: JSON.parse(JSON.stringify(S.cart)), 
-    subtotal: sub,
-    tax: sub * 0.06,
-    total: sub * 1.06,
-    paymentMethod: pmId || 'CREDIT_CARD',
-    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    customer: {
-      name: S.user ? S.user.name : 'Guest',
-      email: S.user ? S.user.email : '',
-      company: S.user ? (S.user.company || '') : '',
-      address: [addr, city, sz].filter(Boolean).join(', ')
+    function finalizeOrder(addr,city,sz,pmId) {
+      var sub=cartSub();
+      var order={id:'ORD-'+Date.now(),invNum:'INV-'+Date.now(),items:S.cart.slice(),subtotal:sub,tax:sub*0.06,total:sub*1.085,paymentMethod:pmId,
+        date:new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
+        customer:{name:S.user?S.user.name:'Guest',email:S.user?S.user.email:'',company:S.user?(S.user.company||''):'',address:[addr,city,sz].filter(Boolean).join(', ')}};
+      S.cart.forEach(function(item){ S.inv[item.product.id]=Math.max(0,getStock(item.product.id)-item.qty); });
+      /* DB에 구조화된 형태로 저장 */
+      saveOrderToDB(order);
+      S.orders.push(order); saveOrders(); S.cart=[];
+      updateCartBadge(); renderQuickCart();
+      if(S.view==='catalog') renderProductArea();
+      if(S.view==='detail') openDetail(S.detailId);
+      closeModal('checkoutModal');
+      toast('Payment successful! 🎉','ok');
+      setTimeout(function(){showInvoice(order);},400);
     }
-  };
-
-  // 재고 차감 및 로컬 저장
-  S.cart.forEach(function(item){ 
-    S.inv[item.product.id] = Math.max(0, getStock(item.product.id) - item.qty); 
-  });
-  
-  S.orders.push(order); 
-  saveOrders(); 
-
-  // DB 저장 함수 호출 (스키마에 맞춤)
-  saveOrderToDB(order); 
-
-  // UI 초기화
-  S.cart = [];
-  saveCart();
-  updateCartBadge();
-  renderQuickCart();
-  
-  if(S.view === 'catalog') renderProductArea();
-  closeModal('checkoutModal');
-  toast('Payment successful! 🎉', 'ok');
-  
-  setTimeout(function(){ showInvoice(order); }, 400);
-}
 
     /* ── init 후 SDK 초기화 ── */
     if (document.readyState === 'loading') {
@@ -6528,10 +6501,13 @@ function finalizeOrder(addr, city, sz, pmId) {
          EMAILJS_SERVICE_ID  → Email Services → Service ID
          EMAILJS_TEMPLATE_ORDER → Email Templates → Template ID (주문확인)
        ════════════════════════════════════════════════════════ */
-    var EMAILJS_PUBLIC_KEY     = 'YOUR_EMAILJS_PUBLIC_KEY';   /* ← 교체 필요 */
-    var EMAILJS_SERVICE_ID     = 'YOUR_SERVICE_ID';            /* ← 교체 필요 */
-    var EMAILJS_TEMPLATE_ORDER = 'YOUR_TEMPLATE_ID';           /* ← 교체 필요 */
-    /* OWNER_EMAIL, STORE_NAME, STORE_ADDR, STORE_PHONE 은 위 SUPABASE 섹션에서 선언됨 */
+    var EMAILJS_PUBLIC_KEY     = '9xwCSdI8f8vmq_Swr';   /* ← 교체 필요 */
+    var EMAILJS_SERVICE_ID     = 'service_c4rhlfd';            /* ← 교체 필요 */
+    var EMAILJS_TEMPLATE_ORDER = 'template_kno8h2g';           /* ← 교체 필요 */
+    var OWNER_EMAIL            = 'kay@tr-equipment.com';       /* 관리자 이메일 */
+    var STORE_NAME             = 'Chefvesta';
+    var STORE_ADDR             = '6381 Old Branch Ave, Camp Springs, MD 20748';
+    var STORE_PHONE            = '(800) 555-0100';
 
     var _emailjsReady = false;
     function initEmailJS() {
@@ -6540,9 +6516,13 @@ function finalizeOrder(addr, city, sz, pmId) {
         _emailjsReady = true;
       }
     }
-    /* defer 로드 후 초기화 */
+    /* defer 로드 후 초기화 — 여러 시점에 재시도 */
     document.addEventListener('DOMContentLoaded', function() {
       setTimeout(initEmailJS, 500);
+      setTimeout(initEmailJS, 1500); /* 재시도 */
+    });
+    window.addEventListener('load', function() {
+      setTimeout(initEmailJS, 300);
     });
 
     /* ── 인보이스 HTML 생성 (이메일/PDF 공용) ── */
@@ -6687,7 +6667,12 @@ function finalizeOrder(addr, city, sz, pmId) {
       if (!order) { toast('주문 데이터를 찾을 수 없습니다.', 'err'); return; }
 
       if (!_emailjsReady) {
-        toast('이메일 서비스 미설정 — EmailJS 키를 코드에 입력하세요.', 'err');
+        /* EmailJS 미설정 — mailto 폴백으로 기본 메일앱 열기 */
+        var subject = encodeURIComponent('[Chefvesta] Order Confirmation - ' + invoiceNumber);
+        var body = encodeURIComponent('Order: ' + invoiceNumber + '\nPlease find your invoice attached.');
+        var mailtoLink = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
+        window.open(mailtoLink, '_blank');
+        toast('메일앱이 열립니다. EmailJS 설정 시 자동 발송됩니다.', 'ok');
         return;
       }
 
@@ -6718,7 +6703,13 @@ function finalizeOrder(addr, city, sz, pmId) {
 
     /* ── 결제 완료 후 자동 이메일 발송 ── */
     function sendOrderConfirmationEmails(order) {
-      if (!_emailjsReady) return; /* EmailJS 미설정 시 스킵 */
+      /* EmailJS 미설정이어도 콘솔에 주문 정보 기록 (운영자 확인용) */
+      console.log('[ORDER] 새 주문:', order.invNum, '|', order.customer.email, '| 총액:', order.total);
+      if (!_emailjsReady) {
+        /* EmailJS 미설정: 콘솔 기록만, 실제 운영시 EMAILJS 키를 입력하세요 */
+        console.warn('[ORDER] EmailJS 미설정 — EMAILJS_PUBLIC_KEY를 실제 값으로 교체하면 자동 이메일 발송됩니다.');
+        return;
+      }
       /* 1. 고객에게 발송 */
       if (order.customer.email) {
         sendInvoiceEmail(order.invNum, order.customer.email);
@@ -6733,7 +6724,46 @@ function finalizeOrder(addr, city, sz, pmId) {
     function processPayment() {
       if (_paymentInProgress) { toast('결제가 이미 진행 중입니다.', 'err'); return; }
       _paymentInProgress = true;
-      setTimeout(function() { _paymentInProgress = false; }, 30000); /* 30초 후 자동 해제 */ var required = ['co_em', 'co_cn', 'co_ex', 'co_cv', 'co_nm', 'co_ad']; for (var i = 0; i < required.length; i++) { var el = $e(required[i]); if (!el || !el.value.trim()) { toast('Please fill in all required fields (*)', 'err'); if (el) el.focus(); return } } if (S.cart.length === 0) { toast('Your cart is empty', 'err'); return } var btn = $e('payBtn'); btn.disabled = true; btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span> Processing...</span>'; setTimeout(function () { var isSuccess = Math.random() > 0.05; if (isSuccess) { S.cart.forEach(function (item) { var current = getStock(item.product.id); S.inv[item.product.id] = Math.max(0, current - item.qty) }); var sub = cartSub(); var order = { id: 'ORD-' + Date.now(), invNum: 'INV-' + Date.now(), items: S.cart.slice(), subtotal: sub, tax: sub * 0.06, total: sub * 1.085, date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), customer: { name: (($e('co_fn') ? $e('co_fn').value : '') + ' ' + ($e('co_ln') ? $e('co_ln').value : '')).trim() || (S.user && S.user.name) || 'Guest', email: ($e('co_em') ? $e('co_em').value : '') || (S.user && S.user.email) || '', company: ($e('co_co') ? $e('co_co').value : '') || '', address: [$e('co_ad') ? $e('co_ad').value : '', $e('co_ci') ? $e('co_ci').value : '', $e('co_sz') ? $e('co_sz').value : ''].filter(Boolean).join(', ') } }; S.orders.push(order); saveOrders(); S.cart = []; saveCart(); updateCartBadge(); renderQuickCart(); if (S.view === 'catalog') renderProductArea(); if (S.view === 'detail') openDetail(S.detailId); _checkoutOpen = false; closeModal('checkoutModal'); toast('Payment successful! 🎉', 'ok'); setTimeout(function () { showInvoice(order); sendOrderConfirmationEmails(order); }, 400) } else { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub() * 1.085); toast('Payment declined. Please check card details.', 'err') } }, 2200) }
+      setTimeout(function() { _paymentInProgress = false; }, 30000);
+      var required = ['co_em', 'co_cn', 'co_ex', 'co_cv', 'co_nm', 'co_ad'];
+      for (var i = 0; i < required.length; i++) { var el = $e(required[i]); if (!el || !el.value.trim()) { toast('Please fill in all required fields (*)', 'err'); if (el) el.focus(); return; } }
+      if (S.cart.length === 0) { toast('Your cart is empty', 'err'); return; }
+      var btn = $e('payBtn'); btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span> Processing...</span>';
+      setTimeout(function() {
+        var isSuccess = Math.random() > 0.05;
+        if (isSuccess) {
+          S.cart.forEach(function(item) { var current = getStock(item.product.id); S.inv[item.product.id] = Math.max(0, current - item.qty); });
+          var sub = cartSub();
+          var order = {
+            id: 'ORD-' + Date.now(), invNum: 'INV-' + Date.now(),
+            items: JSON.parse(JSON.stringify(S.cart)),
+            subtotal: sub, tax: sub * 0.06, total: sub * 1.085,
+            paymentMethod: 'CREDIT_CARD',
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            customer: {
+              name: (($e('co_fn') ? $e('co_fn').value : '') + ' ' + ($e('co_ln') ? $e('co_ln').value : '')).trim() || (S.user && S.user.name) || 'Guest',
+              email: ($e('co_em') ? $e('co_em').value : '') || (S.user && S.user.email) || '',
+              company: ($e('co_co') ? $e('co_co').value : '') || '',
+              address: [$e('co_ad') ? $e('co_ad').value : '', $e('co_ci') ? $e('co_ci').value : '', $e('co_sz') ? $e('co_sz').value : ''].filter(Boolean).join(', ')
+            }
+          };
+          /* ✅ Supabase DB 저장 */
+          saveOrderToDB(order);
+          S.orders.push(order); saveOrders();
+          S.cart = []; saveCart(); updateCartBadge(); renderQuickCart();
+          if (S.view === 'catalog') renderProductArea();
+          if (S.view === 'detail') openDetail(S.detailId);
+          _checkoutOpen = false; closeModal('checkoutModal');
+          toast('Payment successful! 🎉', 'ok');
+          setTimeout(function() { showInvoice(order); sendOrderConfirmationEmails(order); }, 400);
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '&#128274; PAY ' + fmt(cartSub() * 1.085);
+          toast('Payment declined. Please check card details.', 'err');
+        }
+      }, 2200);
+    }
     /* showInvoice: 위에서 정의됨 */
 
 
@@ -6764,13 +6794,23 @@ function finalizeOrder(addr, city, sz, pmId) {
       } catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
     function saveOrders() {
-      try { localStorage.setItem(LS_ORDERS, JSON.stringify(S.orders)); } catch(e) { /* localStorage 미지원 환경 무시 */ }
+      try {
+        if (typeof LS_ORDERS === 'undefined' || !LS_ORDERS) {
+          console.error('[STORAGE] LS_ORDERS 미정의 — 저장 스킵');
+          return;
+        }
+        localStorage.setItem(LS_ORDERS, JSON.stringify(S.orders || []));
+      } catch(e) { /* localStorage 미지원 환경 무시 */ }
     }
     function loadOrders() {
       try {
         var raw = localStorage.getItem(LS_ORDERS);
         if (raw) S.orders = JSON.parse(raw);
       } catch(e) { /* localStorage 미지원 환경 무시 */ }
+      /* 로그인 상태이면 DB에서 최신 주문 내역도 동기화 */
+      if (S.user && S.user.supabase_id && supabaseClient) {
+        loadOrdersFromDB();
+      }
     }
 
     function openAccountDashboard() {
@@ -7537,8 +7577,6 @@ function finalizeOrder(addr, city, sz, pmId) {
        localStorage — 커스텀 제품 영구 저장
        새로고침해도 admin 추가/수정/삭제 유지
        ════════════════════════════════════════════ */
-    var LS_KEY   = 'tre_custom_products';
-    var LS_CART  = 'tre_cart';
 
     function saveCart() {
       try { localStorage.setItem(LS_CART, JSON.stringify(S.cart)); } catch(e) { /* 무시 */ }
@@ -7556,14 +7594,11 @@ function finalizeOrder(addr, city, sz, pmId) {
         }
       } catch(e) { /* 무시 */ }
     }
-    var LS_USER  = 'tre_user_profile';
-    var LS_ORDERS = 'tre_user_orders';
 
     /* ════════════════════════════════════════════
        전체 제품 상태 저장/복원
        — 기본 제품 편집, 커스텀 제품 추가, 삭제 모두 영구 저장
        ════════════════════════════════════════════ */
-    var LS_STATE = 'tre_product_state_v2';
 
     function saveCustomProducts() {   /* alias → 전체 상태 저장 */
       saveProductState();
@@ -7898,13 +7933,39 @@ function finalizeOrder(addr, city, sz, pmId) {
       if (urlParams.get('order') === 'success') {
         setTimeout(function() {
           toast('🎉 결제가 완료되었습니다! 주문 확인 이메일을 확인해주세요.', 'ok');
-          /* URL에서 파라미터 제거 */
           window.history.replaceState({}, '', window.location.pathname);
+
+          /* sessionStorage에서 결제 직전 장바구니/주소 복원 후 주문 저장 */
+          try {
+            var pending = sessionStorage.getItem('_pendingOrder');
+            if (pending) {
+              var p = JSON.parse(pending);
+              sessionStorage.removeItem('_pendingOrder');
+              /* 카트 복원 후 finalizeOrder 호출 (DB 저장 + order history 추가) */
+              if (p.cart && p.cart.length > 0) {
+                S.cart = p.cart;
+                /* supabaseClient 준비될 때까지 대기 후 저장 */
+                var _waitAndSave = function(tries) {
+                  if (supabaseClient && S.user) {
+                    finalizeOrder(p.addr || '', p.city || '', p.sz || '', 'STRIPE_CHECKOUT');
+                  } else if (tries > 0) {
+                    setTimeout(function() { _waitAndSave(tries - 1); }, 600);
+                  } else {
+                    /* 최후 폴백: supabase 없이 로컬만 저장 */
+                    finalizeOrder(p.addr || '', p.city || '', p.sz || '', 'STRIPE_CHECKOUT');
+                  }
+                };
+                _waitAndSave(8);
+              }
+            }
+          } catch(e) { console.error('pending order 복원 실패:', e); }
         }, 800);
       } else if (urlParams.get('order') === 'cancelled') {
         setTimeout(function() {
           toast('결제가 취소되었습니다.', 'err');
           window.history.replaceState({}, '', window.location.pathname);
+          /* 취소 시 sessionStorage 정리 */
+          try { sessionStorage.removeItem('_pendingOrder'); } catch(e) {}
         }, 800);
       }
       loadCustomProducts(); loadUserProfile(); loadOrders(); loadCart(); if (S.user) { updateAccountButton(); updateAdminVisibility(); } showView('v-catalog'); renderCatList(); renderProductArea(); buildDesktopNavTabs(); buildMobileCatTabs(); updateMobileUI(); applyFixedBars(); }
