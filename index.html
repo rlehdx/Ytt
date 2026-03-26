@@ -5728,6 +5728,7 @@
             if (event === 'SIGNED_IN' && session) {
               var sbUser = session.user;
               var meta = sbUser.user_metadata || {};
+              console.log('[AUTH] SIGNED_IN:', sbUser.email, 'id:', sbUser.id);
               S.user = {
                 name: meta.full_name || meta.name || sbUser.email.split('@')[0],
                 email: sbUser.email,
@@ -5738,24 +5739,36 @@
                 state: meta.state || '',
                 zip: meta.zip || '',
                 supabase_id: sbUser.id,
-                is_admin: false  /* 아래 DB 조회로 업데이트 */
+                is_admin: false
               };
-              /* profiles 테이블에서 admin 권한 확인
-                 - .maybeSingle() 사용: row 없어도 에러 없이 null 반환
-                 - 실패 시 이메일 기반 폴백 */
+
+              /* ── STEP 1: OWNER_EMAIL 즉시 판별 (RLS/DB 무관) ── */
+              if (sbUser.email === OWNER_EMAIL) {
+                S.isAdmin = true;
+                S.user.is_admin = true;
+                saveUserProfile();
+                updateAccountButton();
+                updateAdminVisibility();
+                console.log('[AUTH] ✅ OWNER_EMAIL 즉시 admin 확인');
+              }
+
+              /* ── STEP 2: DB 추가 확인 ── */
               supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).maybeSingle()
                 .then(function(r) {
+                  console.log('[AUTH] profiles 결과:', JSON.stringify(r));
                   if (r && r.data && r.data.is_admin === true) {
                     S.isAdmin = true;
+                    console.log('[AUTH] ✅ DB에서 admin 확인');
                   } else {
-                    /* profiles row 없거나 is_admin false → 이메일 폴백 */
                     S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                    console.log('[AUTH] 이메일 폴백 isAdmin:', S.isAdmin, '| 이메일:', sbUser.email, '| OWNER:', OWNER_EMAIL);
                   }
                   S.user.is_admin = S.isAdmin;
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
-                }).catch(function() {
-                  /* DB 조회 실패 → 이메일 폴백 */
+                }).catch(function(err) {
+                  console.error('[AUTH] profiles 조회 에러:', err);
                   S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                  console.log('[AUTH] catch 폴백 isAdmin:', S.isAdmin);
                   S.user.is_admin = S.isAdmin;
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
                 });
@@ -5774,6 +5787,7 @@
           if (result.data && result.data.session) {
             var sbUser = result.data.session.user;
             var meta = sbUser.user_metadata || {};
+            console.log('[SESSION] 기존 세션 복원:', sbUser.email, 'id:', sbUser.id);
             S.user = {
               name: meta.full_name || meta.name || sbUser.email.split('@')[0],
               email: sbUser.email, phone: meta.phone || '',
@@ -5782,17 +5796,30 @@
               zip: meta.zip || '', supabase_id: sbUser.id,
               is_admin: false
             };
-            /* profiles 테이블 is_admin 확인 — maybeSingle() 사용 */
+
+            /* ── OWNER_EMAIL 즉시 판별 ── */
+            if (sbUser.email === OWNER_EMAIL) {
+              S.isAdmin = true;
+              S.user.is_admin = true;
+              updateAccountButton();
+              updateAdminVisibility();
+              console.log('[SESSION] ✅ OWNER_EMAIL 즉시 admin');
+            }
+
             supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).maybeSingle()
               .then(function(r) {
+                console.log('[SESSION] profiles 결과:', JSON.stringify(r));
                 if (r && r.data && r.data.is_admin === true) {
                   S.isAdmin = true;
+                  console.log('[SESSION] ✅ DB admin 확인');
                 } else {
                   S.isAdmin = (sbUser.email === OWNER_EMAIL);
+                  console.log('[SESSION] 이메일 폴백 isAdmin:', S.isAdmin);
                 }
                 S.user.is_admin = S.isAdmin;
                 updateAccountButton(); updateAdminVisibility();
-              }).catch(function() {
+              }).catch(function(err) {
+                console.error('[SESSION] profiles 에러:', err);
                 S.isAdmin = (sbUser.email === OWNER_EMAIL);
                 S.user.is_admin = S.isAdmin;
                 updateAccountButton(); updateAdminVisibility();
