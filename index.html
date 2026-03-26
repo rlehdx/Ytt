@@ -6558,9 +6558,9 @@
     var EMAILJS_SERVICE_ID     = 'service_c4rhlfd';            /* ← 교체 필요 */
     var EMAILJS_TEMPLATE_ORDER = 'template_kno8h2g';           /* ← 교체 필요 */
     var OWNER_EMAIL            = 'kay@tr-equipment.com';       /* 관리자 이메일 */
-    var STORE_NAME             = 'Chefvesta';
+    var STORE_NAME             = 'Chef vesta';
     var STORE_ADDR             = '6381 Old Branch Ave, Camp Springs, MD 20748';
-    var STORE_PHONE            = '(800) 555-0100';
+    var STORE_PHONE            = '(703) 589-2580';
 
     var _emailjsReady = false;
     function initEmailJS() {
@@ -6746,7 +6746,7 @@
 
       if (!_emailjsReady) {
         /* EmailJS 미설정 — mailto 폴백으로 기본 메일앱 열기 */
-        var subject = encodeURIComponent('[Chefvesta] Order Confirmation - ' + invoiceNumber);
+        var subject = encodeURIComponent('[Chef vesta] Order Confirmation - ' + invoiceNumber);
         var body = encodeURIComponent('Order: ' + invoiceNumber + '\nPlease find your invoice attached.');
         var mailtoLink = 'mailto:' + toEmail + '?subject=' + subject + '&body=' + body;
         window.open(mailtoLink, '_blank');
