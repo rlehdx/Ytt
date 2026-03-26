@@ -5992,36 +5992,50 @@
         .then(function(r) { if (r.error) console.error('updateStock error:', r.error); });
     }
 
-    /* ── 주문 DB에 저장 ── */
-    function saveOrderToDB(order) {
-      if (!supabaseClient || !S.user) return;
-      var dbOrder = {
-        id: order.id, inv_num: order.invNum,
-        user_id: S.user.supabase_id || null,
-        customer_name: order.customer.name,
-        customer_email: order.customer.email,
-        customer_company: order.customer.company || '',
-        shipping_address: order.customer.address,
-        subtotal: order.subtotal, tax: order.tax, total: order.total,
-        payment_method: order.paymentMethod || '', status: 'completed'
-      };
-      supabaseClient.from('orders').insert(dbOrder).then(function(r) {
-        if (r.error) {
- return; }
-        /* order_items 저장 */
-        var items = order.items.map(function(item) {
-          return {
-            order_id: order.id, product_id: item.product.id,
-            product_name: item.product.name, product_sku: item.product.sku,
-            product_size: item.product.size, unit_price: item.product.price,
-            quantity: item.qty, subtotal: item.product.price * item.qty
-          };
-        });
-        supabaseClient.from('order_items').insert(items)
-          .then(function(r2) { if (r2.error) console.error('order_items error:', r2.error); });
-      });
-    }
+function saveOrderToDB(order) {
+  if (!supabaseClient || !S.user) return;
 
+  // orders 테이블 컬럼 매핑
+  var dbOrder = {
+    id: order.id,
+    inv_num: order.invNum,
+    user_id: S.user.supabase_id,
+    customer_name: order.customer.name,
+    customer_email: order.customer.email,
+    customer_company: order.customer.company,
+    shipping_address: order.customer.address,
+    subtotal: order.subtotal,
+    tax: order.tax,
+    total: order.total,
+    payment_method: order.paymentMethod,
+    status: 'completed'
+  };
+
+  supabaseClient.from('orders').insert(dbOrder).then(function(res) {
+    if (res.error) {
+      console.error('Orders 테이블 삽입 실패:', res.error.message);
+      return;
+    }
+    
+    // 주문 상세 품목(order_items) 저장
+    var items = order.items.map(function(item) {
+      return {
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_sku: item.product.sku || '',
+        product_size: item.product.size || '',
+        unit_price: item.product.price,
+        quantity: item.qty,
+        subtotal: item.product.price * item.qty
+      };
+    });
+    
+    supabaseClient.from('order_items').insert(items).then(function(resItem) {
+      if (resItem.error) console.error('Items 저장 실패:', resItem.error.message);
+    });
+  });
+}
     /* ── 내 주문 DB에서 로드 ── */
     function loadOrdersFromDB() {
       if (!supabaseClient || !S.user || !S.user.supabase_id) return;
@@ -6433,22 +6447,66 @@
       });
     }
 
-    function finalizeOrder(addr,city,sz,pmId) {
-      var sub=cartSub();
-      var order={id:'ORD-'+Date.now(),invNum:'INV-'+Date.now(),items:S.cart.slice(),subtotal:sub,tax:sub*0.06,total:sub*1.085,paymentMethod:pmId,
-        date:new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
-        customer:{name:S.user?S.user.name:'Guest',email:S.user?S.user.email:'',company:S.user?(S.user.company||''):'',address:[addr,city,sz].filter(Boolean).join(', ')}};
-      S.cart.forEach(function(item){ S.inv[item.product.id]=Math.max(0,getStock(item.product.id)-item.qty); });
-      /* DB에 구조화된 형태로 저장 */
-      saveOrderToDB(order);
-      S.orders.push(order); saveOrders(); S.cart=[];
-      updateCartBadge(); renderQuickCart();
-      if(S.view==='catalog') renderProductArea();
-      if(S.view==='detail') openDetail(S.detailId);
-      closeModal('checkoutModal');
-      toast('Payment successful! 🎉','ok');
-      setTimeout(function(){showInvoice(order);},400);
+ function finalizeOrder(addr, city, sz, pmId) {
+  var sub = cartSub();
+  
+  // 1. S.orders 배열이 없으면 초기화하여 push 오류 방지
+  if (!S.orders) S.orders = [];
+
+  // 2. 주문 객체 생성 (구조 최적화)
+  var order = {
+    id: 'ORD-' + Date.now(),
+    invNum: 'INV-' + Date.now(),
+    items: JSON.parse(JSON.stringify(S.cart)), // 카트 복사본 저장
+    subtotal: sub,
+    tax: sub * 0.06,
+    total: sub * 1.06, // 6% 세율 반영
+    paymentMethod: pmId || 'Stripe_Success',
+    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+    customer: {
+      name: S.user ? S.user.name : 'Guest',
+      email: S.user ? S.user.email : '',
+      company: S.user ? (S.user.company || '') : '',
+      address: [addr, city, sz].filter(Boolean).join(', ')
     }
+  };
+
+  // 3. 재고 차감 (로컬 상태 업데이트)
+  S.cart.forEach(function(item) {
+    if (S.inv[item.product.id] !== undefined) {
+      S.inv[item.product.id] = Math.max(0, getStock(item.product.id) - item.qty);
+    }
+  });
+
+  // 4. 데이터 저장 (로컬 + DB)
+  S.orders.push(order); // 로컬 Order History에 추가
+  saveOrders();        // localStorage 저장
+  
+  if (supabaseClient && S.user) {
+    saveOrderToDB(order); // Supabase 테이블에 저장
+  }
+
+  // 5. 카트 비우기 및 UI 갱신
+  S.cart = [];
+  saveCart();
+  updateCartBadge();
+  renderQuickCart();
+
+  // 6. 화면 상태에 따른 리렌더링
+  if (S.view === 'catalog') renderProductArea();
+  if (S.view === 'detail') openDetail(S.detailId);
+  if (S.view === 'cart') renderCartPage();
+
+  // 7. 완료 처리
+  _checkoutOpen = false;
+  closeModal('checkoutModal');
+  toast('Payment successful! 🎉', 'ok');
+  
+  // 8. 인보이스 표시
+  setTimeout(function() {
+    showInvoice(order);
+  }, 400);
+}
 
     /* ── init 후 SDK 초기화 ── */
     if (document.readyState === 'loading') {
