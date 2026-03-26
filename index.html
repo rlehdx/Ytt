@@ -6061,41 +6061,53 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
         });
       });
     }
-/* ── 내 주문 DB에서 로드 ── */
+/* ── 내 주문 DB에서 로드 (RLS 완벽 대응) ── */
     function loadOrdersFromDB() {
       if (!supabaseClient || !S.user || !S.user.supabase_id) return;
       
-      console.log("▶ DB에서 주문 데이터 로드 시도...");
+      console.log("▶ DB 주문 로드 시도...");
       
-      supabaseClient.from('orders').select('*, order_items(*)')
-        .eq('user_id', S.user.supabase_id).order('created_at', { ascending: false })
-        .then(function(result) {
-          if (result.error) {
-            console.error("❌ DB 로드 에러:", result.error.message);
-            return;
-          }
-          if (!result.data || result.data.length === 0) {
-            console.log("⚠️ DB에 저장된 주문이 없습니다.");
-            return;
-          }
-          
-          console.log("✅ DB 주문 로드 성공!", result.data.length, "건");
-          
-          S.orders = result.data.map(function(o) {
-            return {
-              id: o.id, invNum: o.inv_num,
-              date: new Date(o.created_at).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}),
-              subtotal: o.subtotal, tax: o.tax, total: o.total,
-              customer: { name: o.customer_name, email: o.customer_email, company: o.customer_company || '', address: o.shipping_address },
-              items: (o.order_items || []).map(function(i) {
-                return { product: { id: i.product_id, name: i.product_name, sku: i.product_sku, size: i.product_size, price: i.unit_price, brand:'' }, qty: i.quantity };
-              })
-            };
+      // ★ 핵심: Supabase 세션(토큰)이 100% 장착되었는지 확인한 후에만 DB에 요청합니다!
+      supabaseClient.auth.getSession().then(function(sessionRes) {
+        var session = sessionRes.data.session;
+        
+        if (!session) {
+          console.warn("⚠️ 아직 로그인 세션(토큰)이 준비되지 않아 RLS가 차단합니다. 잠시 후 자동으로 다시 시도됩니다.");
+          return; 
+        }
+
+        // 토큰이 확인되면 안전하게 내 주문을 불러옵니다.
+        supabaseClient.from('orders').select('*, order_items(*)')
+          .eq('user_id', S.user.supabase_id)
+          .order('created_at', { ascending: false })
+          .then(function(result) {
+            if (result.error) {
+              console.error("❌ DB 로드 에러:", result.error.message);
+              return;
+            }
+            if (!result.data || result.data.length === 0) {
+              console.log("⚠️ DB에 저장된 주문이 없습니다.");
+              return;
+            }
+            
+            console.log("✅ DB 주문 로드 성공!", result.data.length, "건");
+            
+            S.orders = result.data.map(function(o) {
+              return {
+                id: o.id, invNum: o.inv_num,
+                date: new Date(o.created_at).toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'}),
+                subtotal: o.subtotal, tax: o.tax, total: o.total,
+                customer: { name: o.customer_name, email: o.customer_email, company: o.customer_company || '', address: o.shipping_address },
+                items: (o.order_items || []).map(function(i) {
+                  return { product: { id: i.product_id, name: i.product_name, sku: i.product_sku, size: i.product_size, price: i.unit_price, brand:'' }, qty: i.quantity };
+                })
+              };
+            });
+            
+            saveOrders(); 
+            if (S.view === 'account') renderAccountPage('orders');
           });
-          
-          saveOrders(); // 불러온 데이터를 로컬에 덮어쓰기
-          if (S.view === 'account') renderAccountPage('orders'); // 화면 즉시 새로고침
-        });
+      });
     }
 
     /* ── Supabase 로그인 (인증 필수) ── */
