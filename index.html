@@ -4,10 +4,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Chefvesta — Restaurant equitment</title>
-  <link rel="icon" type="image/jpeg" href="./images/1 Small ChefVesta PNG.png">
-<link rel="apple-touch-icon" href="./images/1 Small ChefVesta PNG.png">
+  <title>Chefvesta — Restaurant Equipment &amp; Cleaning Chemicals</title>
+  <!-- SEO -->
+  <meta name="description" content="Chefvesta: Professional restaurant equipment and commercial cleaning chemicals. Intercon, Ally and more.">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Chefvesta — Restaurant Equipment &amp; Chemicals">
+  <meta property="og:description" content="Professional cleaning chemicals and restaurant supply for food service.">
+  <meta property="og:type" content="website">
+  <!-- 보안 헤더 (서버 측 .htaccess에서도 동일 적용 권장) -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <link rel="icon" type="image/png" href="./images/1 Small ChefVesta PNG.png">
+  <link rel="apple-touch-icon" href="./images/1 Small ChefVesta PNG.png">
   <style>
+
+    /* ── Skip Navigation (접근성) ── */
+    .skip-nav {
+      position: absolute; top: -40px; left: 6px; z-index: 9999;
+      background: #aacf38; color: #111; font-weight: 700; font-size: 13px;
+      padding: 8px 16px; border-radius: 4px; text-decoration: none;
+      transition: top .2s;
+    }
+    .skip-nav:focus { top: 6px; outline: 3px solid #111; }
     *,
     *::before,
     *::after {
@@ -1249,7 +1268,6 @@
     }
 
 
-
     .cart-empty {
       text-align: center;
       padding: 60px 20px;
@@ -1641,6 +1659,7 @@
 
     .inp-full {
       width: 100%;
+      font-size: 16px !important; /* iOS zoom 방지 */
       border: 1px solid #ccc;
       border-radius: 3px;
       padding: 9px 11px;
@@ -1834,7 +1853,7 @@
       border-radius: 4px;
       max-width: 980px;
       width: 100%;
-      max-height: 90vh;
+      max-height: 90dvh;
       overflow-y: auto;
       box-shadow: 0 8px 40px rgba(0, 0, 0, .3)
     }
@@ -2545,7 +2564,7 @@
         width: 100%;
         border-radius: 0;
         z-index: 250;
-        max-height: 60vh;
+        max-height: 60dvh;
         overflow-y: auto
       }
 
@@ -3529,7 +3548,6 @@
     }
 
 
-
     /* ── sub-nav: 흰색 배경 ── */
     .sub-nav {
       background: #ffffff !important;
@@ -4018,8 +4036,6 @@
     }
 
 
-
-
     /* 모바일 헤더 버튼 색상 */
     @media (max-width: 768px) {
       .logo-name {
@@ -4126,9 +4142,6 @@
       background: #f0f2f5;
       padding: 0;
     }
-
-
-
 
 
     .mob-cart-items {
@@ -4797,14 +4810,21 @@
       background: #d4edda;
       color: #1a5e2d;
     }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://js.stripe.com/v3/" defer></script>
   <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" defer></script>
+  <!-- EmailJS — 결제 완료 이메일 발송 -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+  <!-- jsPDF — Invoice PDF 다운로드 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 
 <body>
+  <a href="#main-content" class="skip-nav">본문 바로가기</a>
   <div class="util-bar">
     <span>Call Us: <a href="tel:+18005550100" style="color:inherit">(703) 998-1414</a></span>
     <div class="util-links">
@@ -4818,14 +4838,14 @@
       <button onclick="openLoginModal()">Account</button>
     </div>
   </div>
-  <div class="site-header">
+  <div class="site-header" role="banner">
     <div class="header-inner">
       <div class="logo-wrap" onclick="mobileCatSelect('Chemical')">
-        <img class="logo-img" src="images/2 Long Chefvesta PNG.png" alt="TOP Logo">
+        <img class="logo-img" src="./images/2 Long Chefvesta PNG.png" alt="TOP Logo">
       </div>
       <div class="header-search desktop-only">
         <input type="text" id="searchBox" placeholder="Search product name, part #, or brand..."
-          onkeydown="if(event.key==='Enter') doSearch()">
+          onkeydown="if(event.key==='Enter'){doSearch();}else{doSearchDebounced();}">
         <button onclick="doSearch()">Search</button>
       </div>
       <div class="header-right">
@@ -4856,13 +4876,13 @@
     <div class="sub-nav-inner" id="desktopNavTabs"></div>
   </div>
   <div class="mobile-search-bar mobile-only" id="mobileSearchBar" style="display:none">
-    <input type="text" id="mobileSearchInput" placeholder="Model number or Product name"
-      onkeydown="if(event.key==='Enter'){ document.getElementById('searchBox').value=this.value; doSearch(); }">
+    <input type="text" id="mobileSearchInput" placeholder="Model number or Product name" aria-label="제품 검색"
+      onkeydown="if(event.key==='Enter'){document.getElementById('searchBox').value=this.value;doSearch();}else{document.getElementById('searchBox').value=this.value;doSearchDebounced();}">
     <button
       onclick="document.getElementById('searchBox').value=document.getElementById('mobileSearchInput').value||''; doSearch()">&#128269;</button>
   </div>
   <div class="mobile-cat-tabs mobile-only" id="mobileCatTabs" style="display:none"></div>
-  <div id="v-catalog" style="display:none">
+  <div id="v-catalog" role="main"  style="display:none">
     <div class="main-wrap">
       <div>
         <div class="cat-sidebar">
@@ -4928,8 +4948,7 @@
                 <span style="font-size:22px;flex-shrink:0">&#9993;</span>
                 <div>
                   <div style="font-weight:700;font-size:13px;color:#111;margin-bottom:3px">Email</div>
-                  <div style="font-size:12.5px;color:#555"><a
-                      href="mailto:kay@tr-equipment.com" style="color:#5a7a00;font-weight:700">kay@tr-equipment.com</a><br><span
+                  <div style="font-size:12.5px;color:#555"><a href="mailto:support@chefvesta.com" style="color:#5a7a00;font-weight:700"><span class="__cf_email__" data-cfemail="c1aaa0b881b5b3eca4b0b4a8b1aca4afb5efa2aeac">[email&#160;protected]</span></a><br><span
                       style="color:#888">We reply within 24 hours</span>
                   </div>
                 </div>
@@ -5002,7 +5021,7 @@
     <div class="modal-box">
       <div class="modal-hd">
         <span class="modal-hd-title">&#128274; Secure Checkout</span>
-        <button class="modal-x" onclick="closeModal('checkoutModal')">&#10005;</button>
+        <button class="modal-x" aria-label="닫기" onclick="closeModal('checkoutModal')">&#10005;</button>
       </div>
       <div class="modal-body" id="checkoutBody"></div>
     </div>
@@ -5011,7 +5030,7 @@
     <div class="modal-box">
       <div class="modal-hd">
         <span class="modal-hd-title">&#128100; Account — Sign In / Register</span>
-        <button class="modal-x" onclick="closeModal('loginModal')">&#10005;</button>
+        <button class="modal-x" aria-label="닫기" onclick="closeModal('loginModal')">&#10005;</button>
       </div>
       <div class="modal-body" id="loginBody"></div>
     </div>
@@ -5028,7 +5047,7 @@
             style="background:#;color:#111;border:none;border-radius:3px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:Arial;transition:background .15s"
             onmouseover="this.style.background='#8fb22c'" onmouseout="this.style.background='#aacf38'">&#10133; Add
             Product</button>
-          <button class="modal-x" onclick="closeModal('adminModal')">&#10005;</button>
+          <button class="modal-x" aria-label="닫기" onclick="closeModal('adminModal')">&#10005;</button>
         </div>
       </div>
       <div class="modal-body" id="adminBody"></div>
@@ -5041,7 +5060,7 @@
     <div class="modal-box" style="max-width:620px">
       <div class="modal-hd">
         <span class="modal-hd-title">&#10133; Add New Product</span>
-        <button class="modal-x" onclick="closeModal('addProductModal')">&#10005;</button>
+        <button class="modal-x" aria-label="닫기" onclick="closeModal('addProductModal')">&#10005;</button>
       </div>
       <div class="modal-body" id="addProductBody"></div>
     </div>
@@ -5052,7 +5071,7 @@
     <div class="modal-box" style="max-width:620px">
       <div class="modal-hd">
         <span class="modal-hd-title">&#9998; Edit Product</span>
-        <button class="modal-x" onclick="closeModal('editProductModal')">&#10005;</button>
+        <button class="modal-x" aria-label="닫기" onclick="closeModal('editProductModal')">&#10005;</button>
       </div>
       <div class="modal-body" id="editProductBody"></div>
     </div>
@@ -5068,12 +5087,12 @@
     </div>
   </div>
   <button class="admin-fab" id="adminFab" onclick="openAdminPanel()" style="display:none">&#9881; Admin</button>
-  <div class="toast-wrap" id="toastWrap"></div>
+  <div class="toast-wrap" id="toastWrap" aria-live="polite" role="status"></div>
   <footer class="site-footer">
     <div class="footer-bottom"
       style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:center;gap:10px">
-        <img class="f-logo-img" src="images/2 Long Chefvesta PNG.png" style="height:36px;object-fit:contain">
+        <img class="f-logo-img" src="./images/2 Long Chefvesta PNG.png" alt="Chefvesta Logo" style="height:36px;object-fit:contain">
         <span style="font-size:15px;font-weight:900;color:#fff;letter-spacing:-.2px">TRE Supply <span
             style="color:#aacf38">Co.</span></span>
       </div>
@@ -5082,8 +5101,8 @@
     </div>
   </footer>
 
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+  
+  
   <script type="text/javascript">
     /* ============================================================================
        ⭐⭐⭐ [사용자 설정 영역] ⭐⭐⭐
@@ -5091,9 +5110,9 @@
        사이드바, 상단 탭, 그리드 메뉴가 모두 이 데이터를 보고 자동으로 만들어집니다.
        - image: "" (따옴표 안을 비워두면 이름의 첫 글자가 이미지 대신 표시됩니다)
        ============================================================================ */
-    const CATEGORY_CONFIG = {
+    var CATEGORY_CONFIG = {
       "Restaurant Supply": {
-        image: "", // 예: "images/main_restaurant.jpg"
+        image: "", // 예: "./images/main_restaurant.jpg"
         subs: [
           { name: "Coming Soon", image: "./images/images.jpg" }, //
 
@@ -5127,7 +5146,7 @@
     /* =================================================================
        기본 제품 데이터 (변경 없음)
        ================================================================= */
-    const PRODUCTS = [{ "id": "p1", "sku": "FICCB-LT-0005-0703", "name": "HDL-50 Detergent", "brand": "Intercon", "desc": "Multi-temp machine detergent. Works in high and low temperature dishwashers. NSF certified.", "size": "5 gal", "price": 72, "stock": 50, "category": "Chemical", "img_key": "HDL50_5G", "badge": "", "img": "./images/p1.png" }, { "id": "p2", "sku": "FICCB-LT-04X1-0703", "name": "HDL-50 Detergent", "brand": "Intercon", "desc": "Multi-temp machine detergent. Works in high and low temperature dishwashers. NSF certified.", "size": "1 gal.", "price": 15, "stock": 120, "category": "Chemical", "img_key": "HDL50_1G", "badge": "", "img": "./images/p2.png" }, { "id": "p3", "sku": "FICCB-SS-0005-0204", "name": "Lo Temp Sanitizer", "brand": "Intercon", "desc": "10% sodium hypochlorite sanitizer. EPA registered for food contact surfaces.", "size": "5 gal.", "price": 67, "stock": 40, "category": "Chemical", "img_key": "Lo_Temp_Sanitizer_5G", "badge": "", "img": "./images/5G Low Temp Sanitizer.png" }, { "id": "p4", "sku": "FICCB-SS-04X1-0204", "name": "Lo Temp Sanitizer", "brand": "Intercon", "desc": "10% sodium hypochlorite sanitizer. EPA registered for food contact surfaces.", "size": "1 gal", "price": 14, "stock": 200, "category": "Chemical", "img_key": "Lo_Temp_Sanitizer_1G", "badge": "", "img": "./images/p4.png" }, { "id": "p5", "sku": "FICCB-WR-0005-0863", "name": "Multi-Temp Rinse", "brand": "Intercon", "desc": "Rinse additive for high or low temperature dishwasher use. Streak-free shine.", "size": "5 gal.", "price": 107, "stock": 30, "category": "Chemical", "img_key": "Muilti_Temp_Rinse_5G", "badge": "", "img": "./images/p5.png" }, { "id": "p6", "sku": "FICCB-WR-04X1-0863", "name": "Multi-Temp Rinse", "brand": "Intercon", "desc": "Rinse additive for high or low temperature dishwasher use. Streak-free shine.", "size": "1 gal.", "price": 22, "stock": 80, "category": "Chemical", "img_key": "Multi_Temp_Rinse_1G", "badge": "", "img": "./images/1G Multi Temp Rinse.png" }, { "id": "p7", "sku": "FICCB-WA-04X1-0411", "name": "Scale-X", "brand": "Intercon", "desc": "Premium concentrated delimer. Removes mineral scale from dishwashers and coffee equipment.", "size": "1 gal.", "price": 21, "stock": 90, "category": "Chemical", "img_key": "Scale_X_1G", "badge": "", "img": "./images/p7.png" }, { "id": "p8", "sku": "FICCB-MD-04X1-879B", "name": "Blue Diamond", "brand": "Intercon", "desc": "Concentrated manual pot and pan detergent. Clear blue floral scent. High-foaming.", "size": "1 gal.", "price": 15, "stock": 150, "category": "Chemical", "img_key": "Blue_Diamond_1G", "badge": "", "img": "./images/p8.png" }, { "id": "p9", "sku": "FICCB-SS-04X1-0234", "name": "Grade-A", "brand": "Intercon", "desc": "No-rinse quaternary food service sanitizer. EPA registered. Food contact safe.", "size": "1 gal.", "price": 18, "stock": 110, "category": "Chemical", "img_key": "Grade_A_1G", "badge": "", "img": "./images/p9.png" }, { "id": "p10", "sku": "FICCB-SS-04X1-0784", "name": "Oven Monster", "brand": "Intercon", "desc": "Strong alkaline oven, grill and fryer cleaner. Penetrates baked-on carbon grease.", "size": "1 gal.", "price": 19, "stock": 75, "category": "Chemical", "img_key": "Oven_monster_1G", "badge": "", "img": "./images/p10.png" }, { "id": "p11", "sku": "FICCB-HD-04X1-694F", "name": "Hurricane", "brand": "Intercon", "desc": "Concentrated butyl foaming degreaser. Fluorescent green. Heavy-duty kitchen cleaning.", "size": "1 gal.", "price": 15, "stock": 130, "category": "Chemical", "img_key": "Hurricane_1G", "badge": "", "img": "./images/p11.png" }, { "id": "p12", "sku": "FICCB-GP-04X1-0845", "name": "Surefoot EZ", "brand": "Intercon", "desc": "Foaming enzyme cleaner and degreaser for quarry tile floors. Improves traction.", "size": "1 gal.", "price": 22, "stock": 60, "category": "Chemical", "img_key": "Surefoot_Ez_1G", "badge": "", "img": "./images/p12.png" }, { "id": "p13", "sku": "FICCB-GP-04X1-0840", "name": "Daily", "brand": "Intercon", "desc": "Citrus scented neutral floor and APC cleaner. Safe on all sealed floors.", "size": "1 gal.", "price": 19, "stock": 100, "category": "Chemical", "img_key": "Daily_1G", "badge": "", "img": "./images/p13.png" }, { "id": "p14", "sku": "FICCB-MD-0005-7808", "name": "Ally Pink Pot and Pan", "brand": "Ally", "desc": "Economical pot and pan detergent. Pink lilac scent. High-sudsing hand dishwashing.", "size": "5 gal.", "price": 50, "stock": 45, "category": "Chemical", "img_key": "Pink_Pot__Pan_5G", "badge": "", "img": "./images/p14.png" }, { "id": "p15", "sku": "FICCB-MD-04X1-7808", "name": "Ally Pink Pot and Pan", "brand": "Ally", "desc": "Economical pot and pan detergent. Pink lilac scent. High-sudsing hand dishwashing.", "size": "1 gal.", "price": 10, "stock": 200, "category": "Chemical", "img_key": "Pink_Pot_n_Pan_1G", "badge": "", "img": "./images/p15.png" }, { "id": "p16", "sku": "FICCB-GP-04X1-7602", "name": "Ally Multi-Purpose Cleaner", "brand": "Ally", "desc": "Economical lavender multi-purpose cleaner. Cleans counters, walls, and equipment.", "size": "1 gal.", "price": 10, "stock": 180, "category": "Chemical", "img_key": "Multi_Purpose_Cleaner_1G", "badge": "", "img": "./images/p16.png" }, { "id": "p17", "sku": "FICCB-SS-04X1-7701", "name": "Ally Oven and Grill Cleaner", "brand": "Ally", "desc": "Economical oven and grill cleaner. Cuts through baked-on grease efficiently.", "size": "1 gal.", "price": 12, "stock": 90, "category": "Chemical", "img_key": "Oven_n_Grill_Cleaner_1G", "badge": "", "img": "./images/p17.png" }, {
+    var PRODUCTS = [{ "id": "p1", "sku": "FICCB-LT-0005-0703", "name": "HDL-50 Detergent", "brand": "Intercon", "desc": "Multi-temp machine detergent. Works in high and low temperature dishwashers. NSF certified.", "size": "5 gal", "price": 72, "stock": 50, "category": "Chemical", "img_key": "HDL50_5G", "badge": "", "img": "./images/p1.png" }, { "id": "p2", "sku": "FICCB-LT-04X1-0703", "name": "HDL-50 Detergent", "brand": "Intercon", "desc": "Multi-temp machine detergent. Works in high and low temperature dishwashers. NSF certified.", "size": "1 gal.", "price": 15, "stock": 120, "category": "Chemical", "img_key": "HDL50_1G", "badge": "", "img": "./images/p2.png" }, { "id": "p3", "sku": "FICCB-SS-0005-0204", "name": "Lo Temp Sanitizer", "brand": "Intercon", "desc": "10% sodium hypochlorite sanitizer. EPA registered for food contact surfaces.", "size": "5 gal.", "price": 67, "stock": 40, "category": "Chemical", "img_key": "Lo_Temp_Sanitizer_5G", "badge": "", "img": "./images/5G Low Temp Sanitizer.png" }, { "id": "p4", "sku": "FICCB-SS-04X1-0204", "name": "Lo Temp Sanitizer", "brand": "Intercon", "desc": "10% sodium hypochlorite sanitizer. EPA registered for food contact surfaces.", "size": "1 gal", "price": 14, "stock": 200, "category": "Chemical", "img_key": "Lo_Temp_Sanitizer_1G", "badge": "", "img": "./images/p4.png" }, { "id": "p5", "sku": "FICCB-WR-0005-0863", "name": "Multi-Temp Rinse", "brand": "Intercon", "desc": "Rinse additive for high or low temperature dishwasher use. Streak-free shine.", "size": "5 gal.", "price": 107, "stock": 30, "category": "Chemical", "img_key": "Muilti_Temp_Rinse_5G", "badge": "", "img": "./images/p5.png" }, { "id": "p6", "sku": "FICCB-WR-04X1-0863", "name": "Multi-Temp Rinse", "brand": "Intercon", "desc": "Rinse additive for high or low temperature dishwasher use. Streak-free shine.", "size": "1 gal.", "price": 22, "stock": 80, "category": "Chemical", "img_key": "Multi_Temp_Rinse_1G", "badge": "", "img": "./images/1G Multi Temp Rinse.png" }, { "id": "p7", "sku": "FICCB-WA-04X1-0411", "name": "Scale-X", "brand": "Intercon", "desc": "Premium concentrated delimer. Removes mineral scale from dishwashers and coffee equipment.", "size": "1 gal.", "price": 21, "stock": 90, "category": "Chemical", "img_key": "Scale_X_1G", "badge": "", "img": "./images/p7.png" }, { "id": "p8", "sku": "FICCB-MD-04X1-879B", "name": "Blue Diamond", "brand": "Intercon", "desc": "Concentrated manual pot and pan detergent. Clear blue floral scent. High-foaming.", "size": "1 gal.", "price": 15, "stock": 150, "category": "Chemical", "img_key": "Blue_Diamond_1G", "badge": "", "img": "./images/p8.png" }, { "id": "p9", "sku": "FICCB-SS-04X1-0234", "name": "Grade-A", "brand": "Intercon", "desc": "No-rinse quaternary food service sanitizer. EPA registered. Food contact safe.", "size": "1 gal.", "price": 18, "stock": 110, "category": "Chemical", "img_key": "Grade_A_1G", "badge": "", "img": "./images/p9.png" }, { "id": "p10", "sku": "FICCB-SS-04X1-0784", "name": "Oven Monster", "brand": "Intercon", "desc": "Strong alkaline oven, grill and fryer cleaner. Penetrates baked-on carbon grease.", "size": "1 gal.", "price": 19, "stock": 75, "category": "Chemical", "img_key": "Oven_monster_1G", "badge": "", "img": "./images/p10.png" }, { "id": "p11", "sku": "FICCB-HD-04X1-694F", "name": "Hurricane", "brand": "Intercon", "desc": "Concentrated butyl foaming degreaser. Fluorescent green. Heavy-duty kitchen cleaning.", "size": "1 gal.", "price": 15, "stock": 130, "category": "Chemical", "img_key": "Hurricane_1G", "badge": "", "img": "./images/p11.png" }, { "id": "p12", "sku": "FICCB-GP-04X1-0845", "name": "Surefoot EZ", "brand": "Intercon", "desc": "Foaming enzyme cleaner and degreaser for quarry tile floors. Improves traction.", "size": "1 gal.", "price": 22, "stock": 60, "category": "Chemical", "img_key": "Surefoot_Ez_1G", "badge": "", "img": "./images/p12.png" }, { "id": "p13", "sku": "FICCB-GP-04X1-0840", "name": "Daily", "brand": "Intercon", "desc": "Citrus scented neutral floor and APC cleaner. Safe on all sealed floors.", "size": "1 gal.", "price": 19, "stock": 100, "category": "Chemical", "img_key": "Daily_1G", "badge": "", "img": "./images/p13.png" }, { "id": "p14", "sku": "FICCB-MD-0005-7808", "name": "Ally Pink Pot and Pan", "brand": "Ally", "desc": "Economical pot and pan detergent. Pink lilac scent. High-sudsing hand dishwashing.", "size": "5 gal.", "price": 50, "stock": 45, "category": "Chemical", "img_key": "Pink_Pot__Pan_5G", "badge": "", "img": "./images/p14.png" }, { "id": "p15", "sku": "FICCB-MD-04X1-7808", "name": "Ally Pink Pot and Pan", "brand": "Ally", "desc": "Economical pot and pan detergent. Pink lilac scent. High-sudsing hand dishwashing.", "size": "1 gal.", "price": 10, "stock": 200, "category": "Chemical", "img_key": "Pink_Pot_n_Pan_1G", "badge": "", "img": "./images/p15.png" }, { "id": "p16", "sku": "FICCB-GP-04X1-7602", "name": "Ally Multi-Purpose Cleaner", "brand": "Ally", "desc": "Economical lavender multi-purpose cleaner. Cleans counters, walls, and equipment.", "size": "1 gal.", "price": 10, "stock": 180, "category": "Chemical", "img_key": "Multi_Purpose_Cleaner_1G", "badge": "", "img": "./images/p16.png" }, { "id": "p17", "sku": "FICCB-SS-04X1-7701", "name": "Ally Oven and Grill Cleaner", "brand": "Ally", "desc": "Economical oven and grill cleaner. Cuts through baked-on grease efficiently.", "size": "1 gal.", "price": 12, "stock": 90, "category": "Chemical", "img_key": "Oven_n_Grill_Cleaner_1G", "badge": "", "img": "./images/p17.png" }, {
       "id": "p18", "sku": "FICCB-GP-04X1-7803", "name": "Ally Enzyme Floor Cleaner", "brand": "Ally", "desc": "Economical enzyme floor cleaner. Biological formula breaks down organic soils.", "size": "1 gal.", "price": 12, "stock": 110, "category": "Chemical",            // 1. 기존 코드와의 호환을 위해 메인 카테고리 입력
       "mainCat": "Chemical",             // 2. 메인 카테고리 (대분류)
       "subCat": "All Chemical",        // 3. 서브 카테고리 (중/소분류 - 정확한 이름 입력)
@@ -5140,7 +5159,7 @@
        ⚠️  제품 임시 이미지 맵 — 나중에 실제 이미지로 교체하세요
        key = product id, value = 이미지 URL (로컬 파일 or CDN)
        ================================================================= */
-    const PRODUCT_IMAGES = {
+    var PRODUCT_IMAGES = {
       'p1': './images/p1.png',
       'p2': './images/p2.png',
       'p3': './images/p3.png',
@@ -5206,11 +5225,17 @@
     });
 
     /* ── 이미지 getter: PRODUCT_IMAGES 맵 우선, 없으면 p.img 사용 ── */
+    var IMG_FALLBACK = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect width=%22120%22 height=%22120%22 fill=%22%23f4f7fc%22/%3E%3Ctext x=%2250%25%22 y=%2255%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2232%22%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E';
+    function imgErrorHandler(el) {
+      el.onerror = null;
+      el.src = IMG_FALLBACK;
+      el.style.background = '#f4f7fc';
+    }
     function getProductImg(p) {
       return (typeof PRODUCT_IMAGES !== 'undefined' && PRODUCT_IMAGES[p.id]) || p.img || '';
     }
 
-    const S = { view: 'catalog', isAdmin: false, cat: 'Chemical', sub: null, expanded: {}, detailId: null, search: '', brandF: 'All', sizeF: 'All', sortF: 'def', cart: [], user: null, inv: {}, orders: [] };
+    var S = { view: 'catalog', isAdmin: false, cat: 'Chemical', sub: null, expanded: {}, detailId: null, search: '', brandF: 'All', sizeF: 'All', sortF: 'def', cart: [], user: null, inv: {}, orders: [] };
     PRODUCTS.forEach(function (p) { S.inv[p.id] = p.stock });
     function $e(id) { return document.getElementById(id) }
     function getStock(id) { return S.inv[id] !== undefined ? S.inv[id] : 0 }
@@ -5332,6 +5357,14 @@
       renderProductArea();
     }
 
+    var _scrollPositions = {};
+    function saveScrollPos(key) {
+      _scrollPositions[key] = window.scrollY || window.pageYOffset;
+    }
+    function restoreScrollPos(key) {
+      var pos = _scrollPositions[key] || 0;
+      window.scrollTo(0, pos);
+    }
     function selectCat(cat, sub) {
       S.cat = cat || null;
       S.sub = sub || null;
@@ -5444,7 +5477,7 @@
 
         /* 이미지 영역 */
         var imgInner = imgSrc
-          ? '<img src="' + imgSrc + '" alt="' + p.name + '" loading="lazy">'
+          ? '<img src="' + imgSrc + '" alt="' + p.name + '" loading="lazy" onerror="imgErrorHandler(this)">'
           : '<div class="pcard-img-ph">' + p.name.charAt(0) + '</div>';
         var outOverlay = isOut ? '<div class="pcard-out-overlay">Sold Out</div>' : '';
 
@@ -5460,7 +5493,7 @@
           + ''
           + '</div>';
 
-        html += '<div class="pcard' + (isOut ? ' prod-row-out' : '') + '" onclick="(\'' + p.id + '\'' + ')">'
+        html += '<div class="pcard' + (isOut ? ' prod-row-out' : '') + '" onclick="openDetail(\'' + p.id + '\')" style="cursor:pointer">'
           + '<div class="pcard-img">' + imgInner + badgeHtml + outOverlay + '</div>'
           + '<div class="pcard-body">'
           + '<div class="pcard-name">' + p.name + '</div>'
@@ -5481,6 +5514,7 @@
     }
 
     function openDetail(id) {
+      saveScrollPos('catalog');
       S.detailId = id; S.view = 'detail'; showView('v-detail'); var p = PRODUCTS.find(function (x) { return x.id === id }); if (!p) return; var stock = getStock(id); var st = stCls(stock); var isOut = (st === 'out'); $e('detBread').innerHTML = '<a class="bread-a" onclick="selectCat(null, null)">All Products</a> &rsaquo; <a class="bread-a" onclick="selectCat(\'' + p.mainCat + '\', null)">' + p.mainCat + '</a> &rsaquo; <a class="bread-a" onclick="selectCat(\'' + p.mainCat + '\', \'' + p.subCat + '\')">' + p.subCat + '</a> &rsaquo; <strong>' + p.name + '</strong>'; var badge = ''; if (p.badge) { var bc = 'bg-def'; if (p.badge.indexOf('EPA') >= 0) bc = 'bg-epa'; if (p.badge === 'Heavy Duty') bc = 'bg-hd'; if (p.badge === 'Value') bc = 'bg-val'; badge = '<span class="prod-badge ' + bc + '" style="font-size:11px; margin-left:6px">' + p.badge + '</span>' } var addBtn = isOut ? '<button class="btn-orange" disabled style="opacity:0.45; cursor:not-allowed">Out of Stock</button>' : '<button class="btn-orange btn-lg" onclick="addDetailToCart(\'' + p.id + '\')">Add to Cart</button>';
       var imgSrc = getProductImg(p);
       var imgHtml = imgSrc ? '<img src="' + imgSrc + '" alt="' + p.name + '">' : '<div class="det-img-placeholder">' + p.name.charAt(0) + '</div>';
@@ -5655,6 +5689,9 @@
     /* ═══════════════════════════════════════════
        STRIPE + SUPABASE INTEGRATION
        ═══════════════════════════════════════════ */
+    /* ⚠️  ANON KEY는 공개 키입니다 (RLS 정책으로 보호됨).
+       GoDaddy 환경변수 사용 불가 → Supabase Dashboard에서 RLS 필수 확인.
+       절대 SERVICE_ROLE KEY를 여기 넣지 마세요. */
     var SUPABASE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co';
     var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZka2VjZW9qbGNuYnd5cHBvZnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMDY3ODgsImV4cCI6MjA4OTY4Mjc4OH0.SzULEzj6ivsndI97BoHd1vo0OEHhcv6wjERDyeHATEw';
     var STRIPE_PK = 'pk_test_51TCQZgERxQ0bHKfyP6vKbkiXaJZvWwoSrmgjMGPf1TjTilpnSJABi8QEozHuwm9SXZ7XkbiHTGKIBN4mgOyFMV1A00vOO9ijCc';
@@ -5662,13 +5699,23 @@
     var stripeInstance = null;
 
     function initSupabase() {
-      /* file:// 프로토콜에서는 Supabase 연결 불가 - 데모 모드 */
+      /* GoDaddy HTTPS 환경: Supabase 연결 */
       if (window.location.protocol === 'file:') {
-        console.info('Supabase: file:// 환경 - 데모 모드로 동작');
-        return;
+        return; /* 로컬 파일 환경에서는 스킵 */
       }
       if (!window.supabase) {
-        console.warn('Supabase SDK 미로드');
+        /* defer 로드 완료 전 — 최대 5초 대기 후 재시도 */
+        var _retry = 0;
+        var _wait = setInterval(function() {
+          _retry++;
+          if (window.supabase) {
+            clearInterval(_wait);
+            initSupabase();
+          } else if (_retry >= 50) { /* 5초 초과 */
+            clearInterval(_wait);
+            console.error('Supabase SDK 로드 실패 — CDN 연결 확인 필요');
+          }
+        }, 100);
         return;
       }
       try {
@@ -5695,10 +5742,10 @@
               /* profiles 테이블에서 admin 권한 확인 */
               supabaseClient.from('profiles').select('is_admin').eq('id', sbUser.id).single()
                 .then(function(r) {
-                  S.isAdmin = (r.data && r.data.is_admin) ? true : (sbUser.email === 'admin@tresupply.com');
+                  S.isAdmin = (r.data && r.data.is_admin === true);
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
                 }).catch(function() {
-                  S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+                  S.isAdmin = false; /* admin 판단은 DB is_admin 필드만 사용 */
                   saveUserProfile(); updateAccountButton(); updateAdminVisibility();
                 });
               closeModal('loginModal');
@@ -5707,7 +5754,7 @@
               S.user = null; S.isAdmin = false; S.orders = [];
               updateAccountButton(); updateAdminVisibility();
             }
-          } catch(e2) { console.warn('Auth state error:', e2); }
+          } catch(e2) { if(e2) console.error("Caught error:", e2.message||e2); }
         });
 
         /* 기존 세션 복원 */
@@ -5729,7 +5776,7 @@
                 if (r.data) {
                   S.isAdmin = !!r.data.is_admin;
                 } else {
-                  S.isAdmin = (sbUser.email === 'admin@tresupply.com');
+                  S.isAdmin = false; /* admin 판단은 DB is_admin 필드만 사용 */
                 }
                 updateAccountButton(); updateAdminVisibility();
               });
@@ -5737,7 +5784,6 @@
           /* DB에서 제품/재고 로드 (로그인 여부 무관) */
           loadProductsFromDB();
         }).catch(function(err) {
-          console.warn('Supabase getSession error:', err.message);
           supabaseClient = null;
         });
         /* 세션 없어도 제품 로드 (비로그인 방문자도 제품 볼 수 있어야 함) */
@@ -5746,14 +5792,13 @@
         }, 1000);
 
       } catch(e) {
-        console.warn('Supabase init failed:', e.message);
         supabaseClient = null;
       }
     }
 
     function initStripe() {
       try { if (window.Stripe) stripeInstance = window.Stripe(STRIPE_PK); }
-      catch(e) { console.warn('Stripe init failed:', e); }
+      catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
 
     /* ══════════════════════════════════════════════════════
@@ -5768,14 +5813,11 @@
         .then(function(result) {
           if (result.error) {
             var errMsg = result.error.message || result.error.code || JSON.stringify(result.error);
-            console.warn('Products load error:', errMsg);
             if (errMsg.indexOf('42P01') >= 0 || errMsg.indexOf('does not exist') >= 0) {
-              console.warn('products 테이블 없음 - supabase_setup.sql 실행 필요');
             }
             return;
           }
           if (!result.data || result.data.length === 0) {
-            console.info('DB에 제품 없음 - 로컬 데이터 사용');
             return;
           }
           var products = result.data;
@@ -5825,20 +5867,22 @@
               /* localStorage 커스텀 제품은 DB에 없는 것만 유지 */
               renderCatList();
               if (S.view === 'catalog') renderProductArea();
-              console.info('✅ DB에서 제품 ' + products.length + '개 로드 완료');
             }).catch(function(err) {
-              console.warn('Inventory load error:', err);
               /* inventory 실패해도 제품은 표시 */
               renderCatList();
               if (S.view === 'catalog') renderProductArea();
             });
-        }).catch(function(err) { console.warn('loadProductsFromDB catch:', err); });
+        }).catch(function(err) {
+          console.error('DB sync error:', err);
+        });
     }
 
     /* ── 제품 DB에 저장 (Admin) ── */
     function saveProductToDB(product, stock) {
-      if (!supabaseClient) { console.warn('Supabase 미연결 - DB 저장 건너뜀'); return Promise.resolve(); }
-      if (!S.isAdmin) { console.warn('Admin 권한 없음 - DB 저장 건너뜀'); return Promise.resolve(); }
+      if (!supabaseClient) {
+ return Promise.resolve(); }
+      if (!S.isAdmin) {
+ return Promise.resolve(); }
       var dbProduct = {
         id: product.id, sku: product.sku, name: product.name,
         brand: product.brand, description: product.desc,
@@ -5848,25 +5892,21 @@
         badge: product.badge || '', img_url: product.img || '',
         is_active: true
       };
-      console.info('DB 저장 시도:', dbProduct.id, dbProduct.name);
       return supabaseClient.from('products').upsert(dbProduct, { onConflict: 'id' })
         .then(function(r) {
           if (r.error) {
-            console.warn('saveProductToDB error:', r.error.message || r.error);
             toast('DB 저장 실패: ' + (r.error.message || 'Unknown'), 'err');
             return;
           }
-          console.info('✅ products DB 저장 완료:', dbProduct.id);
           /* 재고 저장 */
           return supabaseClient.from('inventory')
             .upsert({ product_id: product.id, stock: parseInt(stock) || 0 }, { onConflict: 'product_id' })
             .then(function(r2) {
-              if (r2.error) { console.warn('inventory upsert error:', r2.error.message); return; }
-              console.info('✅ inventory DB 저장 완료:', product.id, 'stock:', stock);
+              if (r2.error) {
+ return; }
             });
         }).catch(function(err) {
-          console.warn('saveProductToDB catch:', err);
-          toast('DB 연결 오류: ' + err.message, 'err');
+          console.error('DB error:', err.message); toast('DB 연결 오류가 발생했습니다.', 'err');
         });
     }
 
@@ -5874,14 +5914,14 @@
     function deleteProductFromDB(productId) {
       if (!supabaseClient || !S.isAdmin) return Promise.resolve();
       return supabaseClient.from('products').update({ is_active: false }).eq('id', productId)
-        .then(function(r) { if (r.error) console.warn('deleteProductFromDB error:', r.error); });
+        .then(function(r) { if (r.error) console.error('deleteProduct error:', r.error); });
     }
 
     /* ── 재고 DB 업데이트 (Admin) ── */
     function updateStockInDB(productId, stock) {
       if (!supabaseClient) return;
       supabaseClient.from('inventory').upsert({ product_id: productId, stock: parseInt(stock) || 0 })
-        .then(function(r) { if (r.error) console.warn('updateStockInDB error:', r.error); });
+        .then(function(r) { if (r.error) console.error('updateStock error:', r.error); });
     }
 
     /* ── 주문 DB에 저장 ── */
@@ -5898,7 +5938,8 @@
         payment_method: order.paymentMethod || '', status: 'completed'
       };
       supabaseClient.from('orders').insert(dbOrder).then(function(r) {
-        if (r.error) { console.warn('saveOrderToDB error:', r.error); return; }
+        if (r.error) {
+ return; }
         /* order_items 저장 */
         var items = order.items.map(function(item) {
           return {
@@ -5909,7 +5950,7 @@
           };
         });
         supabaseClient.from('order_items').insert(items)
-          .then(function(r2) { if (r2.error) console.warn('order_items error:', r2.error); });
+          .then(function(r2) { if (r2.error) console.error('order_items error:', r2.error); });
       });
     }
 
@@ -5937,9 +5978,10 @@
 
     /* ── Supabase 로그인 (인증 필수) ── */
     function loginWithEmail() {
+      if (!checkLoginRateLimit()) return;
       var email = $e('loginEmail') ? $e('loginEmail').value.trim() : '';
       var pass  = $e('loginPass')  ? $e('loginPass').value         : '';
-      if (!email || email.indexOf('@') < 0) { toast('유효한 이메일을 입력하세요', 'err'); return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { toast('유효한 이메일 주소를 입력하세요.', 'err'); return; }
       if (!pass || pass.length < 6) { toast('비밀번호는 6자 이상이어야 합니다', 'err'); return; }
 
       if (!supabaseClient) {
@@ -5959,13 +6001,15 @@
             if (msg.toLowerCase().indexOf('email') >= 0 && msg.toLowerCase().indexOf('confirm') >= 0)
               msg = '이메일 인증을 완료해주세요 (메일함 확인)';
             toast(msg, 'err');
+            recordLoginFailure();
+          } else {
+            resetLoginAttempts();
           }
           /* 성공시 onAuthStateChange가 자동으로 S.user 설정 */
         })
         .catch(function(err) {
           if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
-          toast('연결 오류: ' + (err.message || 'Unknown error'), 'err');
-          console.warn('Login error:', err);
+          toast('연결 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'err');
         });
     }
 
@@ -5976,8 +6020,12 @@
       var company=($e('regCompany')||{}).value||''; var street=($e('regStreet')||{}).value||'';
       var city=($e('regCity')||{}).value||''; var state=($e('regState')||{}).value||'';
       var zip=($e('regZip')||{}).value||''; var pass=($e('regPass')||{}).value||''; var pass2=($e('regPass2')||{}).value||'';
+      /* 입력값 길이 제한 (overflow/injection 방어) */
+      if (fName.length > 50 || lName.length > 50) { toast('Name too long (max 50 chars)', 'err'); return; }
+      if (email.length > 100) { toast('Email too long', 'err'); return; }
+      if (company.length > 100 || street.length > 200) { toast('Input too long', 'err'); return; }
       if (!fName.trim()) { toast('First name required','err'); return; }
-      if (!email||email.indexOf('@')<0) { toast('Valid email required','err'); return; }
+      if (!email||!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { toast('유효한 이메일 주소를 입력하세요.', 'err'); return; }
       if (!street.trim()||!city.trim()||!zip.trim()) { toast('Full shipping address required','err'); return; }
       if (!pass||pass.length<8) { toast('Password min 8 chars','err'); return; }
       if (pass!==pass2) { toast('Passwords do not match','err'); return; }
@@ -6001,8 +6049,7 @@
           closeModal('loginModal');
         }
       }).catch(function(err) {
-        toast('연결 오류: ' + (err.message || 'Unknown'), 'err');
-        console.warn('SignUp error:', err);
+        toast('연결 오류가 발생했습니다. 잠시 후 다시 시도하세요.', 'err');
       });
     }
 
@@ -6013,15 +6060,62 @@
         provider: 'google',
         options: { redirectTo: window.location.href }
       }).catch(function(err) {
-        toast('Google 로그인 오류: ' + err.message, 'err');
+        toast('Google 로그인에 실패했습니다.', 'err');
       });
     }
 
     /* ── 로그아웃 ── */
+    /* ════════════════════════════════════
+       보안: Rate Limiting (로그인 5회 실패 → 15분 잠금)
+       ════════════════════════════════════ */
+    var _loginAttempts = 0;
+    var _loginLockedUntil = 0;
+    var MAX_LOGIN_ATTEMPTS = 5;
+    var LOGIN_LOCK_MS = 15 * 60 * 1000;
+
+    function checkLoginRateLimit() {
+      if (Date.now() < _loginLockedUntil) {
+        var remain = Math.ceil((_loginLockedUntil - Date.now()) / 60000);
+        toast('Too many attempts. Try again in ' + remain + ' min.', 'err');
+        return false;
+      }
+      return true;
+    }
+    function recordLoginFailure() {
+      _loginAttempts++;
+      if (_loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        _loginLockedUntil = Date.now() + LOGIN_LOCK_MS;
+        _loginAttempts = 0;
+        toast('15분 잠금: 로그인 시도가 너무 많습니다.', 'err');
+      }
+    }
+    function resetLoginAttempts() { _loginAttempts = 0; _loginLockedUntil = 0; }
+
+    /* ════════════════════════════════════
+       자동 로그아웃 — 30분 미활동 시
+       ════════════════════════════════════ */
+    var AUTO_LOGOUT_MS = 30 * 60 * 1000;
+    var _idleTimer = null;
+
+    function resetIdleTimer() {
+      if (_idleTimer) clearTimeout(_idleTimer);
+      if (!S.user) return;
+      _idleTimer = setTimeout(function () {
+        if (S.user) {
+          logout();
+          toast('30분 미활동으로 자동 로그아웃 되었습니다.', 'err');
+        }
+      }, AUTO_LOGOUT_MS);
+    }
+
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(function(evt) {
+      document.addEventListener(evt, resetIdleTimer, { passive: true });
+    });
+
     function logout() {
       if (supabaseClient) supabaseClient.auth.signOut();
       S.user=null; S.isAdmin=false; S.orders=[];
-      try{localStorage.removeItem(LS_USER);localStorage.removeItem(LS_ORDERS);}catch(e){}
+      try{localStorage.removeItem(LS_USER);localStorage.removeItem(LS_ORDERS);} catch(e) { /* localStorage 미지원 환경 무시 */ }
       updateAccountButton(); updateAdminVisibility(); closeModal('loginModal');
       if (S.view==='account') selectCat(null,null);
       toast('Signed out successfully','ok');
@@ -6029,8 +6123,29 @@
 
     /* ── Stripe Checkout Session → stripe.com 으로 리다이렉트 ── */
     var SUPABASE_EDGE_URL = 'https://vdkeceojlcnbwyppofrt.supabase.co/functions/v1/super-api';
+    /* API 호출 Rate Limit — 10초 이내 재호출 차단 */
+    var _lastApiCall = 0;
+    var API_MIN_INTERVAL = 10000;
+    function canCallApi() {
+      var now = Date.now();
+      if (now - _lastApiCall < API_MIN_INTERVAL) {
+        toast('요청이 너무 빠릅니다. 잠시 후 다시 시도해주세요.', 'err');
+        return false;
+      }
+      _lastApiCall = now;
+      return true;
+    }
 
+    var _checkoutOpen = false;
+    window.addEventListener('beforeunload', function(e) {
+      if (_checkoutOpen && S.cart.length > 0) {
+        e.preventDefault();
+        e.returnValue = '결제가 진행 중입니다. 페이지를 나가시겠습니까?';
+        return e.returnValue;
+      }
+    });
     function openCheckout() {
+      _checkoutOpen = true;
       var _qc=$e('quickCart'); if(_qc) _qc.style.display='none';
       if (S.cart.length===0) { toast('Cart is empty','err'); return; }
       if (!S.user) {
@@ -6074,7 +6189,6 @@
               if (el) el.textContent = ev.error ? ev.error.message : '';
             });
           } catch(e) {
-            console.warn('Stripe Elements error:', e);
             showManualCardForm();
           }
         } else {
@@ -6136,8 +6250,6 @@
         cancel_url:     window.location.origin + window.location.pathname + '?order=cancelled'
       };
 
-      console.log('Edge Function 호출:', SUPABASE_EDGE_URL);
-      console.log('요청 데이터:', JSON.stringify(requestBody));
 
       fetch(SUPABASE_EDGE_URL, {
         method: 'POST',
@@ -6150,7 +6262,6 @@
       })
       .then(function(res) {
         return res.text().then(function(text) {
-          console.log('응답 상태:', res.status, '내용:', text);
           if (!res.ok) {
             throw new Error('[' + res.status + '] ' + text.substring(0, 200));
           }
@@ -6159,7 +6270,6 @@
         });
       })
       .then(function(data) {
-        console.log('Edge Function 성공:', data);
         if (data.url) {
           /* ✅ Stripe Checkout 페이지로 이동 */
           window.location.href = data.url;
@@ -6169,7 +6279,7 @@
       })
       .catch(function(err) {
         console.error('Edge Function 실패:', err.message);
-        toast('오류: ' + err.message, 'err');
+        toast('오류가 발생했습니다. 잠시 후 다시 시도하세요.', 'err');
         if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(total) + ' — Secure Checkout &#8594;'; }
       });
     }
@@ -6195,7 +6305,7 @@
       var total = sub + tax;
       var amountCents = Math.round(total * 100); /* Stripe는 cents 단위 */
 
-      /* Step 1: Vercel API에서 PaymentIntent clientSecret 받기 */
+      /* Step 1: Edge Function에서 PaymentIntent clientSecret 받기 */
       fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -6238,7 +6348,6 @@
             toast('결제 실패: ' + result.error.message, 'err');
           } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
             /* ✅ 실제 결제 성공 */
-            console.info('✅ Stripe 결제 성공:', result.paymentIntent.id);
             finalizeOrder(addr, city, sz, result.paymentIntent.id);
           } else {
             if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(total); }
@@ -6246,12 +6355,12 @@
           }
         }).catch(function(err) {
           if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(total); }
-          toast('결제 오류: ' + err.message, 'err');
+          toast('결제 처리 중 오류가 발생했습니다.', 'err');
         });
       })
       .catch(function(err) {
         if (btn) { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(total); }
-        toast('서버 연결 실패: ' + err.message, 'err');
+        toast('서버 연결에 실패했습니다. 잠시 후 다시 시도하세요.', 'err');
         console.error('PaymentIntent fetch error:', err);
       });
     }
@@ -6290,40 +6399,265 @@
         setTimeout(function() { if (supabaseClient) loadProductsFromDB(); }, 1500);
       }, 300);
     }
-    function renderCheckoutForm() { var sub = cartSub(); var tax = sub * 0.06; var total = sub + tax; var u = S.user; var authSection; if (u) { authSection = '<div class="auth-bar"><div class="auth-av">' + u.name.charAt(0).toUpperCase() + '</div><div><div class="auth-name">' + u.name + '</div><div class="auth-email">' + u.email + '</div></div><span class="auth-verified">&#10003; Verified</span></div>' } else { authSection = '<button class="google-btn" onclick="mockGoogleLogin(); setTimeout(renderCheckoutForm, 400)"><span class="gicon"></span> Sign in with Google for faster checkout</button><div class="or-line">or continue as guest</div>' } var orderRows = ''; S.cart.forEach(function (i) { orderRows += '<div class="co-row"><span>' + i.product.name + ' &times;' + i.qty + ' (' + i.product.size + ')</span><span>' + fmt(i.product.price * i.qty) + '</span></div>' }); var firstName = u ? (u.name.split(' ')[0] || '') : ''; var lastName = u ? (u.name.split(' ')[1] || '') : ''; var emailVal = u ? (u.email || '') : ''; var phoneVal = u ? (u.phone || '') : ''; var companyVal = u ? (u.company || '') : ''; var streetVal = u ? (u.street || '') : ''; var cityVal = u ? (u.city || '') : ''; var stateZip = u ? ((u.state || '') + (u.zip ? ' ' + u.zip : '')) : ''; var cardName = u ? u.name : ''; $e('checkoutBody').innerHTML = authSection + '<div class="co-summary">' + orderRows + '<div class="co-row"><span>Tax (8.5%)</span><span>' + fmt(tax) + '</span></div><div class="co-row co-total"><span>Total</span><span>' + fmt(total) + '</span></div></div><div class="co-sec">Contact Information</div><div class="co-grid"><div class="fi"><label>First Name *</label><input type="text" id="co_fn" placeholder="Alex" value="' + firstName + '"></div><div class="fi"><label>Last Name *</label><input type="text" id="co_ln" placeholder="Johnson" value="' + lastName + '"></div><div class="fi fi-full"><label>Email Address *</label><input type="email" id="co_em" placeholder="you@company.com" value="' + emailVal + '"></div><div class="fi"><label>Phone</label><input type="tel" id="co_ph" placeholder="(555) 000-0000" value="' + phoneVal + '"></div><div class="fi"><label>Company Name</label><input type="text" id="co_co" placeholder="Restaurant Inc." value="' + companyVal + '"></div></div><div class="co-sec">Shipping Address</div><div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" placeholder="123 Main Street" value="' + streetVal + '"></div><div class="fi"><label>City *</label><input type="text" id="co_ci" placeholder="Maryland" value="' + cityVal + '"></div><div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" placeholder="IL 60601" value="' + stateZip + '"></div></div><div class="co-sec">Payment Information</div><div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap"><span class="cc-tag">Visa</span><span class="cc-tag">Mastercard</span><span class="cc-tag">Amex</span><span class="cc-tag">Discover</span></div><div class="co-grid"><div class="fi fi-full"><label>Card Number *</label><input type="text" id="co_cn" placeholder="4242 4242 4242 4242" maxlength="19" oninput="formatCardNumber(this)"></div><div class="fi"><label>Expiry (MM/YY) *</label><input type="text" id="co_ex" placeholder="12/27" maxlength="5" oninput="formatExpiry(this)"></div><div class="fi"><label>CVV *</label><input type="text" id="co_cv" placeholder="123" maxlength="4"></div><div class="fi fi-full"><label>Name on Card *</label><input type="text" id="co_nm" placeholder="Alex Johnson" value="' + cardName + '"></div></div><button class="co-pay-btn" id="payBtn" onclick="processPayment()">&#128274; PAY ' + fmt(total) + '</button><div class="co-secure"><span>&#128274; SSL Secured</span><span>&#128737; PCI DSS</span><span>&#10003; Powered by Stripe</span></div>' }
+    function renderCheckoutForm() { var sub = cartSub(); var tax = sub * 0.06; var total = sub + tax; var u = S.user; var authSection; if (u) { authSection = '<div class="auth-bar"><div class="auth-av">' + u.name.charAt(0).toUpperCase() + '</div><div><div class="auth-name">' + u.name + '</div><div class="auth-email">' + u.email + '</div></div><span class="auth-verified">&#10003; Verified</span></div>' } else { authSection = '<button class="google-btn" onclick="mockGoogleLogin(); setTimeout(renderCheckoutForm, 400)"><span class="gicon"></span> Sign in with Google for faster checkout</button><div class="or-line">or continue as guest</div>' } var orderRows = ''; S.cart.forEach(function (i) { orderRows += '<div class="co-row"><span>' + i.product.name + ' &times;' + i.qty + ' (' + i.product.size + ')</span><span>' + fmt(i.product.price * i.qty) + '</span></div>' }); var firstName = u ? (u.name.split(' ')[0] || '') : ''; var lastName = u ? (u.name.split(' ')[1] || '') : ''; var emailVal = u ? (u.email || '') : ''; var phoneVal = u ? (u.phone || '') : ''; var companyVal = u ? (u.company || '') : ''; var streetVal = u ? (u.street || '') : ''; var cityVal = u ? (u.city || '') : ''; var stateZip = u ? ((u.state || '') + (u.zip ? ' ' + u.zip : '')) : ''; var cardName = u ? u.name : ''; $e('checkoutBody').innerHTML = authSection + '<div class="co-summary">' + orderRows + '<div class="co-row"><span>Tax (8.5%)</span><span>' + fmt(tax) + '</span></div><div class="co-row co-total"><span>Total</span><span>' + fmt(total) + '</span></div></div><div class="co-sec">Contact Information</div><div class="co-grid"><div class="fi"><label>First Name *</label><input type="text" id="co_fn" placeholder="Alex" autocomplete="given-name" value="' + firstName + '"></div><div class="fi"><label>Last Name *</label><input type="text" id="co_ln" placeholder="Johnson" autocomplete="family-name" value="' + lastName + '"></div><div class="fi fi-full"><label>Email Address *</label><input type="email" id="co_em" placeholder="you@company.com" autocomplete="email" value="' + emailVal + '"></div><div class="fi"><label>Phone</label><input type="tel" id="co_ph" placeholder="(555)" autocomplete="tel" 000-0000" value="' + phoneVal + '"></div><div class="fi"><label>Company Name</label><input type="text" id="co_co" placeholder="Restaurant Inc." value="' + companyVal + '"></div></div><div class="co-sec">Shipping Address</div><div class="co-grid"><div class="fi fi-full"><label>Street Address *</label><input type="text" id="co_ad" placeholder="123 Main Street" autocomplete="street-address" value="' + streetVal + '"></div><div class="fi"><label>City *</label><input type="text" id="co_ci" placeholder="Maryland" autocomplete="address-level2" value="' + cityVal + '"></div><div class="fi"><label>State / ZIP *</label><input type="text" id="co_sz" placeholder="IL 60601" autocomplete="postal-code" value="' + stateZip + '"></div></div><div class="co-sec">Payment Information</div><div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap"><span class="cc-tag">Visa</span><span class="cc-tag">Mastercard</span><span class="cc-tag">Amex</span><span class="cc-tag">Discover</span></div><div class="co-grid"><div class="fi fi-full"><label>Card Number *</label><input type="text" id="co_cn" placeholder="4242 4242 4242 4242" autocomplete="cc-number" 4242 4242 4242" maxlength="19" oninput="formatCardNumber(this)"></div><div class="fi"><label>Expiry (MM/YY) *</label><input type="text" id="co_ex" placeholder="12/27" autocomplete="cc-exp" maxlength="5" oninput="formatExpiry(this)"></div><div class="fi"><label>CVV *</label><input type="text" id="co_cv" placeholder="123" autocomplete="cc-csc" maxlength="4"></div><div class="fi fi-full"><label>Name on Card *</label><input type="text" id="co_nm" placeholder="Alex Johnson" autocomplete="cc-name" value="' + cardName + '"></div></div><button class="co-pay-btn" id="payBtn" onclick="processPayment()">&#128274; PAY ' + fmt(total) + '</button><div class="co-secure"><span>&#128274; SSL Secured</span><span>&#128737; PCI DSS</span><span>&#10003; Powered by Stripe</span></div>' }
     function formatCardNumber(el) { var v = el.value.replace(/\D/g, '').substring(0, 16); el.value = (v.match(/.{1,4}/g) || []).join(' ') }
     function formatExpiry(el) { var v = el.value.replace(/\D/g, '').substring(0, 4); if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2); el.value = v }
-    function processPayment() { var required = ['co_em', 'co_cn', 'co_ex', 'co_cv', 'co_nm', 'co_ad']; for (var i = 0; i < required.length; i++) { var el = $e(required[i]); if (!el || !el.value.trim()) { toast('Please fill in all required fields (*)', 'err'); if (el) el.focus(); return } } if (S.cart.length === 0) { toast('Your cart is empty', 'err'); return } var btn = $e('payBtn'); btn.disabled = true; btn.textContent = 'Processing...'; setTimeout(function () { var isSuccess = Math.random() > 0.05; if (isSuccess) { S.cart.forEach(function (item) { var current = getStock(item.product.id); S.inv[item.product.id] = Math.max(0, current - item.qty) }); var sub = cartSub(); var order = { id: 'ORD-' + Date.now(), invNum: 'INV-' + Date.now(), items: S.cart.slice(), subtotal: sub, tax: sub * 0.06, total: sub * 1.085, date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), customer: { name: (($e('co_fn') ? $e('co_fn').value : '') + ' ' + ($e('co_ln') ? $e('co_ln').value : '')).trim() || (S.user && S.user.name) || 'Guest', email: ($e('co_em') ? $e('co_em').value : '') || (S.user && S.user.email) || '', company: ($e('co_co') ? $e('co_co').value : '') || '', address: [$e('co_ad') ? $e('co_ad').value : '', $e('co_ci') ? $e('co_ci').value : '', $e('co_sz') ? $e('co_sz').value : ''].filter(Boolean).join(', ') } }; S.orders.push(order); saveOrders(); S.cart = []; updateCartBadge(); renderQuickCart(); if (S.view === 'catalog') renderProductArea(); if (S.view === 'detail') openDetail(S.detailId); closeModal('checkoutModal'); toast('Payment successful! 🎉', 'ok'); setTimeout(function () { showInvoice(order) }, 400) } else { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub() * 1.085); toast('Payment declined. Please check card details.', 'err') } }, 2200) }
-    function showInvoice(order) { var rows = ''; order.items.forEach(function (item, index) { rows += '<tr><td>' + (index + 1) + '</td><td><strong>' + item.product.name + '</strong><br><small>' + item.product.brand + '</small></td><td class="mono" style="font-size:10.5px">' + item.product.sku + '</td><td>' + item.product.size + '</td><td>' + item.qty + '</td><td>' + fmt(item.product.price) + '</td><td><strong>' + fmt((item.product.price * item.qty)) + '</strong></td></tr>' }); $e('invoiceContent').innerHTML = '<div class="inv-hd"><div><div class="inv-logo">TRE Supply Co.</div><div class="inv-sub">Professional Cleaning Solutions</div></div><div style="text-align:right"><div class="inv-lbl">Invoice</div><div class="inv-num">' + order.invNum + '</div><div class="inv-date">' + order.date + '</div></div></div><div class="inv-body"><div class="inv-parties"><div><div class="inv-pl">FROM</div><strong>TRE Supply Co.</strong><br>6381 Old Branch Ave Camp Springs<br>Maryland, 20748<br>kay@tr-equipment.com</div><div><div class="inv-pl">BILL TO</div><strong>' + (order.customer.company || order.customer.name) + '</strong><br>' + order.customer.name + '<br>' + order.customer.address + '<br>' + order.customer.email + '</div></div><table class="inv-tbl"><thead><tr><th>#</th><th>Product</th><th>Part #</th><th>Size</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead><tbody>' + rows + '</tbody></table><div class="inv-tots"><div class="inv-tr"><span>Subtotal</span><span>' + fmt(order.subtotal) + '</span></div><div class="inv-tr"><span>Tax (8.5%)</span><span>' + fmt(order.tax) + '</span></div><div class="inv-tr inv-grand"><span>TOTAL DUE</span><span>' + fmt(order.total) + '</span></div></div></div><div class="inv-foot"><span>Thank you for your business! &bull; <strong>Payment Terms: Net 30</strong></span><div style="display:flex; gap:7px"><button class="btn-ghost" onclick="sendInvoiceEmail(\'' + order.invNum + '\', \'' + order.customer.email + '\')">&#9993; Email PDF</button><button class="btn-blue" onclick="downloadInvoice(\'' + order.invNum + '\')">&#11015; Download PDF</button></div></div>'; openModal('invoiceModal') }
-    function downloadInvoice(invoiceNumber) { var newWindow = window.open('', '_blank'); newWindow.document.write('<!DOCTYPE html><html><head><title>' + invoiceNumber + '</title><style>body{font-family:Arial; margin:20px} table{width:100%; border-collapse:collapse} th{background:#003087; color:#ffd700; padding:7px; font-size:11px; text-align:left} td{padding:8px; border-bottom:1px solid #eee; font-size:12px} @media print{body{margin:0}}</style></head><body>' + $e('invoiceContent').innerHTML + '</body></html>'); newWindow.document.close(); setTimeout(function () { newWindow.print() }, 350); toast('Downloading ' + invoiceNumber + '...', 'ok') }
-    function sendInvoiceEmail(invoiceNumber, email) { toast('Invoice ' + invoiceNumber + ' sent to ' + email, 'ok') }
-    /* ════════════════════════════════════════════
-       ACCOUNT DASHBOARD — 로드맵 Account 기능
-       ════════════════════════════════════════════ */
-    /* ════════════════════════════════════════════
-       ACCOUNT DASHBOARD — 새 페이지 방식
-       localStorage로 user 데이터 영구 저장
-       ════════════════════════════════════════════ */
-    var LS_USER = 'tre_user_profile';
-    var LS_ORDERS = 'tre_user_orders';
+    var _paymentInProgress = false;
+
+    /* ════════════════════════════════════════════════════════
+       EmailJS 설정
+       https://www.emailjs.com 에서 무료 계정 생성 후
+       아래 값을 본인 계정의 값으로 교체하세요:
+         EMAILJS_PUBLIC_KEY  → Account → API Keys → Public Key
+         EMAILJS_SERVICE_ID  → Email Services → Service ID
+         EMAILJS_TEMPLATE_ORDER → Email Templates → Template ID (주문확인)
+       ════════════════════════════════════════════════════════ */
+    var EMAILJS_PUBLIC_KEY     = 'YOUR_EMAILJS_PUBLIC_KEY';   /* ← 교체 필요 */
+    var EMAILJS_SERVICE_ID     = 'YOUR_SERVICE_ID';            /* ← 교체 필요 */
+    var EMAILJS_TEMPLATE_ORDER = 'YOUR_TEMPLATE_ID';           /* ← 교체 필요 */
+    var OWNER_EMAIL            = 'kay@tr-equipment.com';       /* 관리자 이메일 */
+    var STORE_NAME             = 'Chefvesta';
+    var STORE_ADDR             = '6381 Old Branch Ave, Camp Springs, MD 20748';
+    var STORE_PHONE            = '(800) 555-0100';
+
+    var _emailjsReady = false;
+    function initEmailJS() {
+      if (window.emailjs && EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+        window.emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+        _emailjsReady = true;
+      }
+    }
+    /* defer 로드 후 초기화 */
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(initEmailJS, 500);
+    });
+
+    /* ── 인보이스 HTML 생성 (이메일/PDF 공용) ── */
+    function buildInvoiceHTML(order) {
+      var rows = '';
+      order.items.forEach(function(item, idx) {
+        rows += '<tr style="border-bottom:1px solid #eee">'
+          + '<td style="padding:8px 6px;text-align:center">' + (idx+1) + '</td>'
+          + '<td style="padding:8px 6px"><strong>' + escQ(item.product.name) + '</strong><br>'
+          + '<small style="color:#888">' + escQ(item.product.brand) + '</small></td>'
+          + '<td style="padding:8px 6px;font-family:monospace;font-size:11px">' + escQ(item.product.sku) + '</td>'
+          + '<td style="padding:8px 6px">' + escQ(item.product.size) + '</td>'
+          + '<td style="padding:8px 6px;text-align:center">' + item.qty + '</td>'
+          + '<td style="padding:8px 6px;text-align:right">' + fmt(item.product.price) + '</td>'
+          + '<td style="padding:8px 6px;text-align:right;font-weight:700">' + fmt(item.product.price * item.qty) + '</td>'
+          + '</tr>';
+      });
+      var payBadge = order.paymentMethod ? '<span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700">&#10003; PAID</span>' : '';
+      return '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+        + '<title>Invoice ' + order.invNum + '</title>'
+        + '<style>'
+        + 'body{font-family:Arial,sans-serif;color:#222;margin:0;padding:0}'
+        + '.inv-wrap{max-width:780px;margin:0 auto;padding:32px 28px}'
+        + '.inv-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #111;margin-bottom:24px}'
+        + '.brand{font-size:22px;font-weight:900;color:#111}.brand span{color:#aacf38}'
+        + '.inv-meta{text-align:right;font-size:13px}'
+        + '.inv-num{font-size:18px;font-weight:900;color:#111}'
+        + '.status{margin-top:6px}'
+        + '.parties{display:flex;gap:40px;margin-bottom:24px;font-size:13px;line-height:1.8}'
+        + '.party-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:#aacf38;margin-bottom:4px}'
+        + 'table{width:100%;border-collapse:collapse;margin-bottom:20px}'
+        + 'th{background:#111;color:#fff;padding:9px 6px;font-size:11px;text-align:left}'
+        + 'th:last-child,th:nth-child(5),th:nth-child(6){text-align:right}'
+        + '.totals{margin-left:auto;width:260px;font-size:13px}'
+        + '.tot-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}'
+        + '.grand{font-size:16px;font-weight:900;color:#111;border-top:2px solid #111;border-bottom:none;padding-top:8px;margin-top:4px}'
+        + '.footer{margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#888;text-align:center}'
+        + '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+        + '</style></head><body><div class="inv-wrap">'
+        + '<div class="inv-header">'
+        + '<div><div class="brand">Chef<span>vesta</span></div>'
+        + '<div style="font-size:11px;color:#888;margin-top:4px">' + STORE_ADDR + '</div>'
+        + '<div style="font-size:11px;color:#888">' + STORE_PHONE + ' &nbsp;|&nbsp; ' + OWNER_EMAIL + '</div></div>'
+        + '<div class="inv-meta">'
+        + '<div class="inv-num">' + order.invNum + '</div>'
+        + '<div style="color:#888;font-size:12px;margin-top:3px">' + order.date + '</div>'
+        + '<div class="status" style="margin-top:6px">' + payBadge + '</div>'
+        + '</div></div>'
+        + '<div class="parties">'
+        + '<div><div class="party-label">FROM</div>'
+        + '<strong>' + STORE_NAME + '</strong><br>' + STORE_ADDR + '<br>' + STORE_PHONE + '<br>' + OWNER_EMAIL + '</div>'
+        + '<div><div class="party-label">BILL TO</div>'
+        + '<strong>' + escQ(order.customer.company || order.customer.name) + '</strong><br>'
+        + escQ(order.customer.name) + '<br>'
+        + escQ(order.customer.address || '') + '<br>'
+        + escQ(order.customer.email) + '</div>'
+        + '</div>'
+        + '<table><thead><tr>'
+        + '<th style="width:32px">#</th><th>Product</th><th>Part #</th>'
+        + '<th>Size</th><th style="text-align:right">Qty</th>'
+        + '<th style="text-align:right">Unit</th><th style="text-align:right">Total</th>'
+        + '</tr></thead><tbody>' + rows + '</tbody></table>'
+        + '<div class="totals">'
+        + '<div class="tot-row"><span>Subtotal</span><span>' + fmt(order.subtotal) + '</span></div>'
+        + '<div class="tot-row"><span>Tax (8.5%)</span><span>' + fmt(order.tax) + '</span></div>'
+        + '<div class="tot-row" style="color:#888"><span>Shipping</span><span>Free</span></div>'
+        + '<div class="tot-row grand"><span>TOTAL DUE</span><span>' + fmt(order.total) + '</span></div>'
+        + '</div>'
+        + '<div class="footer">Thank you for your business! &bull; Payment Terms: Net 30 &bull; ' + STORE_NAME + '</div>'
+        + '</div></body></html>';
+    }
+
+    /* ── Invoice 모달 표시 ── */
+    function showInvoice(order) {
+      if (!order) { toast('Invoice not found', 'err'); return; }
+      var html = buildInvoiceHTML(order);
+      /* 모달 콘텐츠에 iframe으로 렌더 */
+      var invEl = $e('invoiceContent');
+      invEl.innerHTML = '<iframe id="invFrame" srcdoc="" style="width:100%;height:70vh;border:none;border-radius:6px"></iframe>'
+        + '<div style="display:flex;gap:10px;justify-content:flex-end;padding:12px 16px;background:#f5f5f5;border-top:1px solid #eee">'
+        + '<button class="btn-ghost" onclick="sendInvoiceEmail(\'' + order.invNum + '\',\'' + escQ(order.customer.email) + '\')" style="gap:6px">&#9993; Email to Customer</button>'
+        + '<button class="btn-ghost" onclick="sendInvoiceEmail(\'' + order.invNum + '\',\'' + OWNER_EMAIL + '\')" style="gap:6px">&#9993; Email to Me</button>'
+        + '<button class="btn-blue" onclick="downloadInvoicePDF(\'' + order.invNum + '\')" style="gap:6px">&#11015; Download PDF</button>'
+        + '</div>';
+      /* iframe srcdoc 설정 */
+      setTimeout(function() {
+        var frame = $e('invFrame');
+        if (frame) frame.srcdoc = html;
+      }, 50);
+      /* 원본 데이터 보존 */
+      invEl._currentOrder = order;
+      openModal('invoiceModal');
+    }
+
+    /* ── Invoice PDF 다운로드 (jsPDF) ── */
+    function downloadInvoicePDF(invoiceNumber) {
+      var order = (S.orders || []).find(function(o){ return o.invNum === invoiceNumber; })
+        || (invEl && invEl._currentOrder);
+      var invEl = $e('invoiceContent');
+      if (!order && invEl) order = invEl._currentOrder;
+      if (!order) { toast('Invoice data not found', 'err'); return; }
+
+      /* jsPDF 사용 가능하면 PDF, 아니면 HTML 다운로드 */
+      if (window.jspdf && window.jspdf.jsPDF) {
+        var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+        var frame = $e('invFrame');
+        if (frame && frame.contentDocument && frame.contentDocument.body) {
+          doc.html(frame.contentDocument.body, {
+            callback: function(d) {
+              d.save(invoiceNumber + '.pdf');
+              toast('PDF 다운로드 완료!', 'ok');
+            },
+            x: 10, y: 10, width: 190, windowWidth: 780
+          });
+        } else {
+          _downloadInvoiceHTML(invoiceNumber, order);
+        }
+      } else {
+        _downloadInvoiceHTML(invoiceNumber, order);
+      }
+    }
+
+    function _downloadInvoiceHTML(invoiceNumber, order) {
+      var html = buildInvoiceHTML(order);
+      var blob = new Blob([html], { type: 'text/html' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = invoiceNumber + '.html'; a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      toast('Invoice 다운로드 완료!', 'ok');
+    }
+
+    /* 기존 downloadInvoice 호환성 */
+    function downloadInvoice(invoiceNumber) { downloadInvoicePDF(invoiceNumber); }
+
+    /* ── 이메일 발송 (EmailJS) ── */
+    function sendInvoiceEmail(invoiceNumber, toEmail) {
+      if (!toEmail) { toast('수신 이메일이 없습니다.', 'err'); return; }
+      var order = (S.orders || []).find(function(o){ return o.invNum === invoiceNumber; });
+      var invEl = $e('invoiceContent');
+      if (!order && invEl) order = invEl._currentOrder;
+      if (!order) { toast('주문 데이터를 찾을 수 없습니다.', 'err'); return; }
+
+      if (!_emailjsReady) {
+        toast('이메일 서비스 미설정 — EmailJS 키를 코드에 입력하세요.', 'err');
+        return;
+      }
+
+      /* 아이템 목록 텍스트 */
+      var itemsText = order.items.map(function(i){
+        return i.product.name + ' (' + i.product.size + ') x' + i.qty + '  ' + fmt(i.product.price * i.qty);
+      }).join('\n');
+
+      var params = {
+        to_email:    toEmail,
+        to_name:     order.customer.name || 'Customer',
+        from_name:   STORE_NAME,
+        inv_number:  order.invNum,
+        order_date:  order.date,
+        items_list:  itemsText,
+        subtotal:    fmt(order.subtotal),
+        tax:         fmt(order.tax),
+        total:       fmt(order.total),
+        ship_addr:   order.customer.address || '',
+        store_email: OWNER_EMAIL,
+        store_phone: STORE_PHONE,
+      };
+
+      window.emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ORDER, params)
+        .then(function() { toast('이메일 발송 완료 → ' + toEmail, 'ok'); })
+        .catch(function(err) { toast('이메일 발송에 실패했습니다. 잠시 후 다시 시도해주세요.', 'err'); });
+    }
+
+    /* ── 결제 완료 후 자동 이메일 발송 ── */
+    function sendOrderConfirmationEmails(order) {
+      if (!_emailjsReady) return; /* EmailJS 미설정 시 스킵 */
+      /* 1. 고객에게 발송 */
+      if (order.customer.email) {
+        sendInvoiceEmail(order.invNum, order.customer.email);
+      }
+      /* 2. 관리자에게 발송 (500ms 딜레이 — rate limit 방지) */
+      setTimeout(function() {
+        sendInvoiceEmail(order.invNum, OWNER_EMAIL);
+      }, 500);
+    }
+
+
+    function processPayment() {
+      if (_paymentInProgress) { toast('결제가 이미 진행 중입니다.', 'err'); return; }
+      _paymentInProgress = true;
+      setTimeout(function() { _paymentInProgress = false; }, 30000); /* 30초 후 자동 해제 */ var required = ['co_em', 'co_cn', 'co_ex', 'co_cv', 'co_nm', 'co_ad']; for (var i = 0; i < required.length; i++) { var el = $e(required[i]); if (!el || !el.value.trim()) { toast('Please fill in all required fields (*)', 'err'); if (el) el.focus(); return } } if (S.cart.length === 0) { toast('Your cart is empty', 'err'); return } var btn = $e('payBtn'); btn.disabled = true; btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px"><span style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block"></span> Processing...</span>'; setTimeout(function () { var isSuccess = Math.random() > 0.05; if (isSuccess) { S.cart.forEach(function (item) { var current = getStock(item.product.id); S.inv[item.product.id] = Math.max(0, current - item.qty) }); var sub = cartSub(); var order = { id: 'ORD-' + Date.now(), invNum: 'INV-' + Date.now(), items: S.cart.slice(), subtotal: sub, tax: sub * 0.06, total: sub * 1.085, date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }), customer: { name: (($e('co_fn') ? $e('co_fn').value : '') + ' ' + ($e('co_ln') ? $e('co_ln').value : '')).trim() || (S.user && S.user.name) || 'Guest', email: ($e('co_em') ? $e('co_em').value : '') || (S.user && S.user.email) || '', company: ($e('co_co') ? $e('co_co').value : '') || '', address: [$e('co_ad') ? $e('co_ad').value : '', $e('co_ci') ? $e('co_ci').value : '', $e('co_sz') ? $e('co_sz').value : ''].filter(Boolean).join(', ') } }; S.orders.push(order); saveOrders(); S.cart = []; saveCart(); updateCartBadge(); renderQuickCart(); if (S.view === 'catalog') renderProductArea(); if (S.view === 'detail') openDetail(S.detailId); _checkoutOpen = false; closeModal('checkoutModal'); toast('Payment successful! 🎉', 'ok'); setTimeout(function () { showInvoice(order); sendOrderConfirmationEmails(order); }, 400) } else { btn.disabled = false; btn.innerHTML = '&#128274; PAY ' + fmt(cartSub() * 1.085); toast('Payment declined. Please check card details.', 'err') } }, 2200) }
+    /* showInvoice: 위에서 정의됨 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     function saveUserProfile() {
-      try { if (S.user) localStorage.setItem(LS_USER, JSON.stringify(S.user)); } catch (e) { }
+      try {
+        if (S.user) localStorage.setItem(LS_USER, JSON.stringify(S.user));
+      } catch(e) { /* 무시 */ }
     }
+
     function loadUserProfile() {
       try {
         var raw = localStorage.getItem(LS_USER);
-        if (raw) { var u = JSON.parse(raw); S.user = u; S.isAdmin = (u.email === 'admin@tresupply.com'); }
-      } catch (e) { }
+        if (raw) { var u = JSON.parse(raw); S.user = u; S.isAdmin = (u.is_admin === true); }
+      } catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
     function saveOrders() {
-      try { localStorage.setItem(LS_ORDERS, JSON.stringify(S.orders)); } catch (e) { }
+      try { localStorage.setItem(LS_ORDERS, JSON.stringify(S.orders)); } catch(e) { /* localStorage 미지원 환경 무시 */ }
     }
     function loadOrders() {
       try {
         var raw = localStorage.getItem(LS_ORDERS);
         if (raw) S.orders = JSON.parse(raw);
-      } catch (e) { }
+      } catch(e) { /* localStorage 미지원 환경 무시 */ }
     }
 
     function openAccountDashboard() {
@@ -6533,16 +6867,18 @@
               + '<div style="font-size:13px;font-weight:700;color:#111">&#128722; ' + order.invNum + '</div>'
               + '<div style="font-size:11.5px;color:#888;margin-top:2px">' + order.date + '</div>'
               + '</div>'
-              + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+              + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
               + '<span style="font-size:12px;font-weight:700;color:#2e7d32;background:#e8f5e9;padding:3px 10px;border-radius:20px">&#10003; Delivered</span>'
               + '<span style="font-size:15px;font-weight:900;color:#111">' + fmt(order.total) + '</span>'
-              + '<button class="btn-ghost" style="padding:6px 14px;font-size:12px" onclick="showInvoice(S.orders.find(function(o){return o.invNum===\'' + order.invNum + '\'}))">&#128196; Invoice</button>'
+              + '<button class="btn-ghost" style="padding:5px 12px;font-size:12px" onclick="showInvoice(S.orders.find(function(o){return o.invNum===\'' + order.invNum + '\'}))">&#128196; Invoice</button>'
+              + '<button class="btn-blue" style="padding:5px 12px;font-size:12px" onclick="downloadInvoicePDF(\'' + order.invNum + '\')">&#11015; PDF</button>'
+              + '<button class="btn-ghost" style="padding:5px 12px;font-size:12px" onclick="sendInvoiceEmail(\'' + order.invNum + '\',\'' + escQ((order.customer && order.customer.email) || '') + '\')">&#9993; Email</button>'
               + '</div></div>'
               + '<div style="padding:12px 16px">';
             order.items.forEach(function (item) {
               var img = (typeof PRODUCT_IMAGES !== 'undefined' && PRODUCT_IMAGES[item.product.id]) || item.product.img || '';
               body += '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f5f5f5">'
-                + (img ? '<img src="' + img + '" style="width:44px;height:44px;object-fit:contain;border-radius:6px;background:#f4f7fc;flex-shrink:0">'
+                + (img ? '<img src="' + img + '" alt="' + escQ(item.product.name) + '" style="width:44px;height:44px;object-fit:contain;border-radius:6px;background:#f4f7fc;flex-shrink:0">'
                   : '<div style="width:44px;height:44px;background:#f4f7fc;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#ccc;flex-shrink:0">&#128722;</div>')
                 + '<div style="flex:1;min-width:0">'
                 + '<div style="font-size:13px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + item.product.name + '</div>'
@@ -6635,7 +6971,7 @@
           + '<button class="btn-ghost" style="width:100%;color:#cc0000;border-color:#cc0000;padding:9px" onclick="logout()">Sign Out</button>';
         return;
       }
-      inner.innerHTML = '<button class="google-btn" onclick="mockGoogleLogin()"><span class="gicon"></span> Continue with Google</button><div class="or-line">or sign in with email</div><div class="form-section-title">Sign In</div><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Email Address</label><input type="email" id="loginEmail" class="inp-full" placeholder="you@company.com"><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Password</label><input type="password" id="loginPass" class="inp-full" placeholder="••••••••"><button class="btn-orange" style="width:100%; padding:11px; font-size:14px; margin-bottom:8px" onclick="loginWithEmail()">Sign In</button><div class="or-line">new customer?</div><div style="font-size:12px; font-weight:700; color:#003087; margin:12px 0 8px; padding-bottom:5px; border-bottom:2px solid #e8edf5">Create New Account</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">First Name *</label><input type="text" id="regFName" class="inp-full" placeholder="Alex"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Last Name</label><input type="text" id="regLName" class="inp-full" placeholder="Johnson"></div></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Email Address *</label><input type="email" id="regEmail" class="inp-full" placeholder="you@company.com"><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Phone</label><input type="tel" id="regPhone" class="inp-full" placeholder="(555) 000-0000"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Company Name</label><input type="text" id="regCompany" class="inp-full" placeholder="Restaurant Inc."></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Shipping Address <span style="font-size:11px;color:#888;font-weight:400">(saved for faster checkout)</span></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Street Address *</label><input type="text" id="regStreet" class="inp-full" placeholder="123 Main Street"><div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">City *</label><input type="text" id="regCity" class="inp-full" placeholder="Maryland"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">State</label><input type="text" id="regState" class="inp-full" placeholder="IL" style="text-transform:uppercase"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">ZIP *</label><input type="text" id="regZip" class="inp-full" placeholder="60601"></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Password</div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Password * (min. 8 characters)</label><input type="password" id="regPass" class="inp-full" placeholder="Create a strong password"><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Confirm Password *</label><input type="password" id="regPass2" class="inp-full" placeholder="Repeat your password"><button class="btn-blue" style="width:100%; padding:11px; font-size:14px; margin-top:4px" onclick="registerWithEmail()">Create Account</button><p style="font-size:11px; color:#888; margin-top:10px; text-align:center">By creating an account, you agree to our Terms of Service.</p>';
+      inner.innerHTML = '<button class="google-btn" onclick="mockGoogleLogin()"><span class="gicon"></span> Continue with Google</button><div class="or-line">or sign in with email</div><div class="form-section-title">Sign In</div><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Email Address</label><input type="email" id="loginEmail" class="inp-full" autocomplete="email" placeholder="you@company.com"><label style="font-size:11.5px; font-weight:600; color:#555; display:block; margin-bottom:4px">Password</label><input type="password" id="loginPass" class="inp-full" autocomplete="current-password" placeholder="••••••••"><button class="btn-orange" style="width:100%; padding:11px; font-size:14px; margin-bottom:8px" onclick="loginWithEmail()">Sign In</button><div class="or-line">new customer?</div><div style="font-size:12px; font-weight:700; color:#003087; margin:12px 0 8px; padding-bottom:5px; border-bottom:2px solid #e8edf5">Create New Account</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">First Name *</label><input type="text" id="regFName" class="inp-full" placeholder="Alex"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Last Name</label><input type="text" id="regLName" class="inp-full" placeholder="Johnson"></div></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Email Address *</label><input type="email" id="regEmail" class="inp-full" autocomplete="email" placeholder="you@company.com"><div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Phone</label><input type="tel" id="regPhone" class="inp-full" placeholder="(555) 000-0000"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Company Name</label><input type="text" id="regCompany" class="inp-full" placeholder="Restaurant Inc."></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Shipping Address <span style="font-size:11px;color:#888;font-weight:400">(saved for faster checkout)</span></div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Street Address *</label><input type="text" id="regStreet" class="inp-full" placeholder="123 Main Street"><div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px; margin-bottom:0"><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">City *</label><input type="text" id="regCity" class="inp-full" placeholder="Maryland"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">State</label><input type="text" id="regState" class="inp-full" placeholder="IL" style="text-transform:uppercase"></div><div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">ZIP *</label><input type="text" id="regZip" class="inp-full" placeholder="60601"></div></div><div style="font-size:12px;font-weight:700;color:#003087;margin:10px 0 8px;padding-bottom:5px;border-bottom:2px solid #e8edf5">Password</div><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Password * (min. 8 characters)</label><input type="password" id="regPass" class="inp-full" autocomplete="new-password" placeholder="Create a strong password"><label style="font-size:11.5px;font-weight:600;color:#555;display:block;margin-bottom:4px">Confirm Password *</label><input type="password" id="regPass2" class="inp-full" autocomplete="new-password" placeholder="Repeat your password"><button class="btn-blue" style="width:100%; padding:11px; font-size:14px; margin-top:4px" onclick="registerWithEmail()">Create Account</button><p style="font-size:11px; color:#888; margin-top:10px; text-align:center">By creating an account, you agree to our Terms of Service.</p>';
     }
 
     /* mockGoogleLogin: replaced by Supabase version */
@@ -6643,7 +6979,7 @@
     /* registerWithEmail: replaced by Supabase version */
     /* logout: replaced by Supabase version */
     function updateAdminVisibility() { var fab = $e('adminFab'); if (fab) fab.style.display = S.isAdmin ? 'flex' : 'none'; var snAdmin = $e('sn-admin'); if (snAdmin) snAdmin.style.display = S.isAdmin ? '' : 'none' }
-    function updateAccountButton() { var btns = document.querySelectorAll('#accountBtn'); btns.forEach(function (btn) { if (!btn) return; if (S.user) { var label = 'Hi, ' + S.user.name.split(' ')[0]; if (S.isAdmin) label += ' (Admin)'; btn.textContent = label; btn.style.color = S.isAdmin ? '#ffd700' : '#e85d04'; btn.style.fontWeight = '700' } else { btn.textContent = 'Account'; btn.style.color = ''; btn.style.fontWeight = '' } }) }
+    function updateAccountButton() { var btns = document.querySelectorAll('#accountBtn'); btns.forEach(function (btn) { if (!btn) return; if (S.user) { var label = 'Hi, ' + S.user.name.split(' ')[0]; if (S.isAdmin) label += ' (Admin)'; btn.textContent = label; btn.style.color = S.isAdmin ? '#ffd700' : '#e85d04'; btn.style.fontWeight = '700' } else { btn.textContent = 'Account'; btn.style.color = ''; btn.style.fontWeight = '' } }); if (typeof resetIdleTimer==='function') resetIdleTimer(); }
     function openAdminPanel() { if (!S.isAdmin) { toast('Admin access only. Please log in as admin.', 'err'); return } renderAdminPanel(); openModal('adminModal') }
     /* ── 카테고리 옵션 빌더 (mainCat + subCat 2-tier) ── */
     function buildCatOptions(selMain, selSub) {
@@ -6684,7 +7020,68 @@
     }
 
     function renderAdminPanel() {
-      /* ── 현재 편집 중인 제품 ID ── */
+      /* ── Admin 탭: Inventory / Orders ── */
+      var adminTab = window._adminTab || 'inventory';
+      var tabBar = '<div style="display:flex;border-bottom:2px solid #eee;margin-bottom:16px">'
+        + '<button onclick="window._adminTab=\'inventory\';renderAdminPanel()" style="padding:10px 18px;font-size:13px;font-weight:'+(adminTab==='inventory'?'700':'500')+';color:'+(adminTab==='inventory'?'#5a7a00':'#666')+';background:none;border:none;border-bottom:3px solid '+(adminTab==='inventory'?'#aacf38':'transparent')+';cursor:pointer;margin-bottom:-2px">&#128230; Inventory</button>'
+        + '<button onclick="window._adminTab=\'orders\';renderAdminPanel()" style="padding:10px 18px;font-size:13px;font-weight:'+(adminTab==='orders'?'700':'500')+';color:'+(adminTab==='orders'?'#5a7a00':'#666')+';background:none;border:none;border-bottom:3px solid '+(adminTab==='orders'?'#aacf38':'transparent')+';cursor:pointer;margin-bottom:-2px">&#128196; Orders</button>'
+        + '</div>';
+
+      /* ══ ORDERS 탭 ══ */
+      if (adminTab === 'orders') {
+        /* 모든 사용자 주문 수집 — localStorage에서 로드 */
+        var allOrders = [];
+        try {
+          var raw = localStorage.getItem(LS_ORDERS);
+          if (raw) allOrders = JSON.parse(raw);
+        } catch(e) { /* 무시 */ }
+        /* S.orders도 포함 */
+        (S.orders || []).forEach(function(o) {
+          if (!allOrders.find(function(x){ return x.id === o.id; })) allOrders.push(o);
+        });
+        allOrders = allOrders.slice().reverse();
+
+        var ordersHtml = tabBar;
+        if (allOrders.length === 0) {
+          ordersHtml += '<div style="text-align:center;padding:48px 20px;color:#888"><div style="font-size:48px;margin-bottom:12px">&#128196;</div><p style="font-size:15px;font-weight:700;color:#333">주문 내역 없음</p></div>';
+        } else {
+          ordersHtml += '<div style="font-size:12px;color:#888;margin-bottom:12px">총 ' + allOrders.length + '건의 주문</div>';
+          ordersHtml += '<div style="display:flex;flex-direction:column;gap:12px">';
+          allOrders.forEach(function(order) {
+            var custName = (order.customer && order.customer.name) || 'Guest';
+            var custEmail = (order.customer && order.customer.email) || '';
+            var custAddr = (order.customer && order.customer.address) || '';
+            ordersHtml += '<div style="border:1px solid #e0e4ec;border-radius:8px;overflow:hidden">'
+              + '<div style="background:#f5f9e8;padding:11px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">'
+              + '<div>'
+              + '<div style="font-size:13px;font-weight:700;color:#111">&#128722; ' + escQ(order.invNum) + '</div>'
+              + '<div style="font-size:11.5px;color:#888;margin-top:2px">' + escQ(order.date) + '</div>'
+              + '</div>'
+              + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+              + '<span style="font-size:12px;font-weight:700;color:#2e7d32;background:#e8f5e9;padding:3px 10px;border-radius:12px">&#10003; Paid</span>'
+              + '<span style="font-size:15px;font-weight:900;color:#111">' + fmt(order.total) + '</span>'
+              + '<button class="btn-ghost" style="padding:5px 12px;font-size:11px" onclick="showInvoice(JSON.parse(localStorage.getItem(\''+LS_ORDERS+'\')||\'[]\').find(function(o){return o.invNum===\'' + escQ(order.invNum) + '\'}) || S.orders.find(function(o){return o.invNum===\'' + escQ(order.invNum) + '\'}))" >&#128196; View Invoice</button>'
+              + '<button class="btn-blue" style="padding:5px 12px;font-size:11px" onclick="downloadInvoicePDF(\'' + escQ(order.invNum) + '\')">&#11015; PDF</button>'
+              + '<button class="btn-ghost" style="padding:5px 12px;font-size:11px" onclick="sendInvoiceEmail(\'' + escQ(order.invNum) + '\',\'' + escQ(custEmail) + '\')">&#9993; Email</button>'
+              + '</div></div>'
+              + '<div style="padding:10px 16px;font-size:12.5px;color:#555">'
+              + '<strong>' + escQ(custName) + '</strong>'
+              + (custEmail ? ' &nbsp;·&nbsp; ' + escQ(custEmail) : '')
+              + (custAddr ? '<br><span style="color:#888">' + escQ(custAddr) + '</span>' : '')
+              + '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">';
+            (order.items || []).forEach(function(item) {
+              ordersHtml += '<span style="background:#f4f7fc;border-radius:4px;padding:3px 8px;font-size:11px">'
+                + escQ(item.product.name) + ' x' + item.qty + '</span>';
+            });
+            ordersHtml += '</div></div></div>';
+          });
+          ordersHtml += '</div>';
+        }
+        $e('adminBody').innerHTML = ordersHtml;
+        return;
+      }
+
+      /* ══ INVENTORY 탭 ══ */
       var editingId = window._adminEditingId || null;
 
       /* ── 테이블 rows ── */
@@ -6739,6 +7136,7 @@
       });
 
       $e('adminBody').innerHTML =
+        tabBar +
         '<div class="admin-hint">&#128273; Admin: <strong>' + (S.user ? S.user.email : 'admin') + '</strong> &mdash; Edit inline, update stock, or use <strong style="color:#5a7a00">＋ Add Product</strong> above.</div>' +
         '<div class="admin-tbl-wrap">' +
         '<table class="admin-tbl">' +
@@ -6812,7 +7210,7 @@
 
       var imgVal = isEdit ? (PRODUCT_IMAGES[p.id] || p.img || '') : '';
       var imgPreview = imgVal
-        ? '<img id="' + prefix + '_imgpreview" src="' + imgVal + '" style="max-height:60px;max-width:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px;margin-top:6px;display:block">'
+        ? '<img id="' + prefix + '_imgpreview" src="' + imgVal + '" alt="제품 이미지 미리보기" style="max-height:60px;max-width:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px;margin-top:6px;display:block">'
         : '<div id="' + prefix + '_imgpreview"></div>';
 
       var html =
@@ -6844,7 +7242,7 @@
         '<input type="hidden" id="' + prefix + '_imgdata" value="' + escQ(imgVal) + '">' +
         '</div>' +
         '<div id="' + prefix + '_imgpreview" style="margin-top:8px">' +
-        (imgVal ? '<img src="' + imgVal + '" style="max-height:80px;max-width:150px;object-fit:contain;border:1px solid #ddd;border-radius:6px;display:block">' : '') +
+        (imgVal ? '<img src="' + imgVal + '" alt="제품 이미지" style="max-height:80px;max-width:150px;object-fit:contain;border:1px solid #ddd;border-radius:6px;display:block">' : '') +
         '</div>' +
         '</div>' +
         '</div>' +
@@ -6879,7 +7277,7 @@
         if (dataEl) dataEl.value = b64;
         /* 미리보기 */
         var prev = document.getElementById(previewId);
-        if (prev) prev.innerHTML = '<img src="' + b64 + '" style="max-height:80px;max-width:150px;object-fit:contain;border:1px solid #ddd;border-radius:6px;display:block;margin-top:4px">';
+        if (prev) prev.innerHTML = '<img src="' + b64 + '" alt="업로드 미리보기" style="max-height:80px;max-width:150px;object-fit:contain;border:1px solid #ddd;border-radius:6px;display:block;margin-top:4px">';
       };
       reader.readAsDataURL(file);
     }
@@ -6889,7 +7287,7 @@
       var el = document.getElementById(previewId);
       if (!el) return;
       if (input.value) {
-        el.outerHTML = '<img id="' + previewId + '" src="' + input.value + '" style="max-height:60px;max-width:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px;margin-top:6px;display:block" onerror="this.style.display=\'none\'">';
+        el.outerHTML = '<img id="' + previewId + '" alt="미리보기" src="' + input.value + '" style="max-height:60px;max-width:120px;object-fit:contain;border:1px solid #ddd;border-radius:4px;margin-top:6px;display:block" onerror="this.style.display=\'none\'">';
       } else {
         el.outerHTML = '<div id="' + previewId + '"></div>';
       }
@@ -6975,7 +7373,27 @@
        localStorage — 커스텀 제품 영구 저장
        새로고침해도 admin 추가/수정/삭제 유지
        ════════════════════════════════════════════ */
-    var LS_KEY = 'tre_custom_products';
+    var LS_KEY   = 'tre_custom_products';
+    var LS_CART  = 'tre_cart';
+
+    function saveCart() {
+      try { localStorage.setItem(LS_CART, JSON.stringify(S.cart)); } catch(e) { /* 무시 */ }
+    }
+    function loadCart() {
+      try {
+        var raw = localStorage.getItem(LS_CART);
+        if (raw) {
+          var saved = JSON.parse(raw);
+          /* product 참조 복원 */
+          saved.forEach(function(item) {
+            var p = PRODUCTS.find(function(x){ return x.id === item.product.id; });
+            if (p) { item.product = p; S.cart.push(item); }
+          });
+        }
+      } catch(e) { /* 무시 */ }
+    }
+    var LS_USER  = 'tre_user_profile';
+    var LS_ORDERS = 'tre_user_orders';
 
     /* ════════════════════════════════════════════
        전체 제품 상태 저장/복원
@@ -7000,7 +7418,7 @@
           overrides: overrides,
           deleted: window._deletedProductIds || []
         }));
-      } catch (e) { }
+      } catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
 
     function loadCustomProducts() {   /* alias → 전체 상태 복원 */
@@ -7057,7 +7475,7 @@
             }
           }
         });
-      } catch (e) { }
+      } catch(e) { if(e) console.error("Caught error:", e.message||e); }
     }
 
     /* ── 체크된 Sub Category 값 배열로 반환 ── */
@@ -7137,6 +7555,11 @@
       toast(p.name + ' deleted.', 'ok');
       renderAdminPanel();
     }
+    var _searchTimer = null;
+    function doSearchDebounced() {
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(doSearch, 280);
+    }
     function doSearch() { var keyword = $e('searchBox').value.trim(); S.search = keyword.toLowerCase(); S.cat = null; S.sub = null; S.view = 'catalog'; showView('v-catalog'); renderCatList(); renderProductArea() }
     function showView(viewId) {
       var allViews = ['v-catalog', 'v-detail', 'v-cart', 'v-account', 'v-contact'];
@@ -7149,10 +7572,52 @@
       window.scrollTo(0, 0);
       requestAnimationFrame(applyFixedBars);
     }
-    function openModal(modalId) { var el = $e(modalId); if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden' } }
-    function closeModal(modalId) { var el = $e(modalId); if (el) { el.classList.remove('open'); document.body.style.overflow = '' } }
+    function openModal(modalId) {
+      var el = $e(modalId);
+      if (!el) return;
+      el.classList.add('open');
+      el.setAttribute('aria-modal', 'true');
+      el.setAttribute('role', 'dialog');
+      document.body.style.overflow = 'hidden';
+      /* focus trap — 첫 번째 포커스 가능 요소로 이동 */
+      setTimeout(function() {
+        var focusable = el.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable.length) focusable[0].focus();
+      }, 50);
+    }
+    function closeModal(modalId) {
+      if (modalId === 'checkoutModal') _checkoutOpen = false;
+      var el = $e(modalId);
+      if (el) {
+        el.classList.remove('open');
+        el.removeAttribute('aria-modal');
+        document.body.style.overflow = '';
+      }
+    }
+    /* ── 오프라인 감지 ── */
+    function updateOnlineStatus() {
+      if (!navigator.onLine) {
+        toast('인터넷 연결이 끊겼습니다. 연결 상태를 확인해주세요.', 'err');
+      }
+    }
+    window.addEventListener('online',  function() { toast('인터넷 연결이 복구되었습니다.', 'ok'); });
+    window.addEventListener('offline', updateOnlineStatus);
+
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { document.querySelectorAll('.modal-overlay.open').forEach(function (modal) { modal.classList.remove('open') }); document.body.style.overflow = '' } });
-    function toast(message, type) { var wrapper = $e('toastWrap'); var el = document.createElement('div'); el.className = 'toast ' + (type === 'ok' ? 'toast-ok' : 'toast-err'); var iconColor = type === 'ok' ? '#1a7a1a' : '#c00'; var icon = type === 'ok' ? '&#10003;' : '&#10005;'; el.innerHTML = '<span style="color:' + iconColor + '">' + icon + '</span> ' + message; wrapper.appendChild(el); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el) }, 3000) }
+    function toast(message, type) {
+      var wrapper = $e('toastWrap');
+      if (!wrapper) return;
+      /* 동일 메시지 중복 방지 */
+      var existing = wrapper.querySelectorAll('.toast');
+      if (existing.length >= 3) wrapper.removeChild(existing[0]);
+      var el = document.createElement('div');
+      el.className = 'toast ' + (type === 'ok' ? 'toast-ok' : 'toast-err');
+      var iconColor = type === 'ok' ? '#1a7a1a' : '#c00';
+      var icon = type === 'ok' ? '&#10003;' : '&#10005;';
+      el.innerHTML = '<span style="color:' + iconColor + '">' + icon + '</span> ' + escQ(message);
+      wrapper.appendChild(el);
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 3500);
+    }
 
     function buildDesktopNavTabs() {
       var wrap = document.getElementById('desktopNavTabs'); if (!wrap) return;
@@ -7183,9 +7648,26 @@
     }
 
     /* ── 특수문자 이스케이프 헬퍼 ── */
-    function escQ(str) { return (str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function escQ(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;')
+        .replace(/`/g, '&#x60;')
+        .replace(/=/g, '&#x3D;');
+    }
 
     /* ── Fixed 헤더/서브nav 포지션 JS 동적 설정 ── */
+    /* iOS Safari dvh 폴백 */
+    function setAppHeight() {
+      document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+    }
+    window.addEventListener('resize', function() { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(function(){ applyFixedBars(); setAppHeight(); }, 150); });
+    setAppHeight();
     function applyFixedBars() {
       var isDesktop = window.innerWidth > 768;
       var header = document.querySelector('.site-header');
@@ -7233,6 +7715,19 @@
       }
     }
 
+    /* ── 브라우저 뒤로가기/앞으로가기 지원 ── */
+    function pushState(view, cat, sub) {
+      var state = { view: view, cat: cat || null, sub: sub || null };
+      var url = '#' + view + (cat ? '/' + encodeURIComponent(cat) : '') + (sub ? '/' + encodeURIComponent(sub) : '');
+      try { history.pushState(state, '', url); } catch(e) { /* 무시 */ }
+    }
+    window.addEventListener('popstate', function(e) {
+      if (e.state) {
+        S.cat = e.state.cat; S.sub = e.state.sub; S.view = e.state.view || 'catalog';
+        showView('v-' + S.view);
+        if (S.view === 'catalog') { renderCatList(); renderProductArea(); }
+      }
+    });
     function init() {
       /* Stripe 결제 완료 후 리다이렉트 처리 */
       var urlParams = new URLSearchParams(window.location.search);
@@ -7248,11 +7743,16 @@
           window.history.replaceState({}, '', window.location.pathname);
         }, 800);
       }
-      loadCustomProducts(); loadUserProfile(); loadOrders(); if (S.user) { updateAccountButton(); updateAdminVisibility(); } showView('v-catalog'); renderCatList(); renderProductArea(); buildDesktopNavTabs(); buildMobileCatTabs(); updateMobileUI(); applyFixedBars(); }
-    window.addEventListener('resize', applyFixedBars);
-    init();
+      loadCustomProducts(); loadUserProfile(); loadOrders(); loadCart(); if (S.user) { updateAccountButton(); updateAdminVisibility(); } showView('v-catalog'); renderCatList(); renderProductArea(); buildDesktopNavTabs(); buildMobileCatTabs(); updateMobileUI(); applyFixedBars(); }
+    var _resizeTimer = null;
+    /* GoDaddy defer 로딩 — DOM 완전 로드 후 실행 보장 */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { init(); });
+    } else {
+      init();
+    }
     /* 렌더 완료 후 한 번 더 실측 */
-    requestAnimationFrame(function () { setTimeout(applyFixedBars, 100); });
+    requestAnimationFrame(applyFixedBars);
 
     function isMobile() { return window.innerWidth <= 768 }
     function updateMobileUI() { var sb = document.getElementById('mobileSearchBar'); var ct = document.getElementById('mobileCatTabs'); var mob = isMobile(); if (sb) sb.style.display = mob ? 'flex' : 'none'; if (ct) ct.style.display = mob ? 'flex' : 'none' }
@@ -7331,13 +7831,10 @@
     }
     function toggleMobileMenu() {
       var overlay = document.getElementById('mobileDrawerOverlay');
-      if (!overlay) return;
-      if (overlay.classList.contains('open')) {
-        closeMobileDrawer();
-      } else {
-        openMobileDrawer();
-      }
+      if (overlay && overlay.classList.contains('open')) { closeMobileDrawer(); } else { openMobileDrawer(); }
     }
+
   </script>
 </body>
+
 </html>
