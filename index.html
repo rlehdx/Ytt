@@ -5993,29 +5993,33 @@
     }
 
 function saveOrderToDB(order) {
-  if (!supabaseClient || !S.user) return;
+  if (!supabaseClient) return;
 
-  // orders 테이블 컬럼 매핑
+  // 스키마 컬럼명과 1:1 매핑
   var dbOrder = {
-    id: order.id,
-    inv_num: order.invNum,
-    user_id: S.user.supabase_id,
-    customer_name: order.customer.name,
-    customer_email: order.customer.email,
-    customer_company: order.customer.company,
-    shipping_address: order.customer.address,
-    subtotal: order.subtotal,
-    tax: order.tax,
-    total: order.total,
-    payment_method: order.paymentMethod,
-    status: 'completed'
+    id: order.id,                         // text
+    inv_num: order.invNum,                // text
+    user_id: (S.user && S.user.supabase_id) ? S.user.supabase_id : null, // UUID (null 허용)
+    customer_name: order.customer.name,   // text
+    customer_email: order.customer.email, // text
+    customer_company: order.customer.company, // text
+    shipping_address: order.customer.address, // text
+    subtotal: order.subtotal,             // numeric
+    tax: order.tax,                       // numeric
+    total: order.total,                   // numeric
+    payment_method: order.paymentMethod,  // text
+    status: 'completed'                   // text
   };
 
   supabaseClient.from('orders').insert(dbOrder).then(function(res) {
     if (res.error) {
-      console.error('Orders 테이블 삽입 실패:', res.error.message);
-      return;
+      console.error('Supabase 저장 실패:', res.error.message);
+      // UUID 형식이 틀렸거나 컬럼명이 다를 경우 여기서 에러 출력
+    } else {
+      console.log('Supabase 저장 성공!');
     }
+  });
+}
     
     // 주문 상세 품목(order_items) 저장
     var items = order.items.map(function(item) {
