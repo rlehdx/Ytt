@@ -1,4 +1,3 @@
-web application/stitch/projects/3784952564592148410/screens/4297684958757219056
 <!DOCTYPE html>
 <html lang="en">
 
@@ -4827,6 +4826,7 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
   <!-- jsPDF — Invoice PDF 다운로드 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 </head>
 
 <body>
@@ -6670,16 +6670,40 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
       openModal('invoiceModal');
     }
 
+/* ── Invoice 모달 표시 ── */
+    function showInvoice(order) {
+      if (!order) { toast('Invoice not found', 'err'); return; }
+      var html = buildInvoiceHTML(order);
+      var invEl = $e('invoiceContent');
+      
+      /* ⭐ 하단에 모달을 닫고 쇼핑을 계속할 수 있는 Close 버튼 추가 */
+      invEl.innerHTML = '<iframe id="invFrame" srcdoc="" style="width:100%;height:70vh;border:none;border-radius:6px"></iframe>'
+        + '<div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:12px 16px;background:#f5f5f5;border-top:1px solid #eee;flex-wrap:wrap">'
+        + '<button class="btn-ghost" onclick="sendInvoiceEmail(\'' + order.invNum + '\',\'' + escQ(order.customer.email) + '\')" style="gap:6px">&#9993; Email to Customer</button>'
+        + '<button class="btn-ghost" onclick="sendInvoiceEmail(\'' + order.invNum + '\',\'' + OWNER_EMAIL + '\')" style="gap:6px">&#9993; Email to Me</button>'
+        + '<button class="btn-blue" onclick="downloadInvoicePDF(\'' + order.invNum + '\')" style="gap:6px">&#11015; Download PDF</button>'
+        + '<div style="flex-grow:1"></div>' 
+        + '<button class="btn-orange" onclick="closeModal(\'invoiceModal\')" style="padding:8px 24px;">Close / Continue Shopping &#8594;</button>'
+        + '</div>';
+        
+      setTimeout(function() {
+        var frame = $e('invFrame');
+        if (frame) frame.srcdoc = html;
+      }, 50);
+      invEl._currentOrder = order;
+      openModal('invoiceModal');
+    }
+
     /* ── Invoice PDF 다운로드 (jsPDF) ── */
     function downloadInvoicePDF(invoiceNumber) {
-      var order = (S.orders || []).find(function(o){ return o.invNum === invoiceNumber; })
-        || (invEl && invEl._currentOrder);
       var invEl = $e('invoiceContent');
+      var order = (S.orders || []).find(function(o){ return o.invNum === invoiceNumber; });
       if (!order && invEl) order = invEl._currentOrder;
       if (!order) { toast('Invoice data not found', 'err'); return; }
 
-      /* jsPDF 사용 가능하면 PDF, 아니면 HTML 다운로드 */
-      if (window.jspdf && window.jspdf.jsPDF) {
+      /* ⭐ html2canvas 라이브러리가 로드되었는지 확실히 확인 후 실행 (에러 방지) */
+      if (window.jspdf && window.jspdf.jsPDF && window.html2canvas) {
+        toast('PDF 생성 중입니다. 잠시만 기다려주세요...', 'ok');
         var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
         var frame = $e('invFrame');
         if (frame && frame.contentDocument && frame.contentDocument.body) {
@@ -6694,6 +6718,7 @@ web application/stitch/projects/3784952564592148410/screens/4297684958757219056
           _downloadInvoiceHTML(invoiceNumber, order);
         }
       } else {
+        /* 라이브러리가 로드되지 않은 환경에서는 안전하게 HTML 영수증으로 대체 다운로드 */
         _downloadInvoiceHTML(invoiceNumber, order);
       }
     }
